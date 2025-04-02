@@ -109,13 +109,38 @@ export function Sidebar({
               </h3>
               <div className="mt-2 space-y-1">
                 {displayedCategories.map((category) => (
-                  <label key={category} className="flex items-center px-3 py-1 text-sm">
+                  <label 
+                    key={category} 
+                    className={cn(
+                      "flex items-center px-3 py-1.5 text-sm rounded-md cursor-pointer",
+                      selectedCategories.includes(category) 
+                        ? "bg-[#EEF3F8] text-[#0A66C2] font-medium" 
+                        : "hover:bg-gray-50"
+                    )}
+                  >
                     <Checkbox 
                       checked={selectedCategories.includes(category)}
                       onCheckedChange={() => onCategoryChange(category)}
-                      className="h-4 w-4 text-[#0A66C2] rounded border-gray-300"
+                      className={cn(
+                        "h-4 w-4 rounded border-gray-300",
+                        selectedCategories.includes(category) 
+                          ? "text-[#0A66C2] border-[#0A66C2]" 
+                          : "text-gray-400"
+                      )}
                     />
-                    <span className="ml-2 text-sm text-gray-700">{category}</span>
+                    <span className={cn(
+                      "ml-2 text-sm",
+                      selectedCategories.includes(category) 
+                        ? "text-[#0A66C2] font-medium" 
+                        : "text-gray-700"
+                    )}>
+                      {category}
+                    </span>
+                    {selectedCategories.includes(category) && (
+                      <span className="ml-auto px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+                        Active
+                      </span>
+                    )}
                   </label>
                 ))}
                 

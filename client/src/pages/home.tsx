@@ -42,9 +42,12 @@ export default function Home() {
   // Fetch all categories
   const { 
     data: categories = [], 
-    isLoading: isLoadingCategories 
+    isLoading: isLoadingCategories,
+    refetch: refetchCategories
   } = useQuery<string[]>({
     queryKey: ["/api/categories"],
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   // Mutation for analyzing a LinkedIn post
@@ -144,6 +147,9 @@ export default function Home() {
     // Skip the most recent post since it's displayed separately
     if (mostRecentPost.length > 0 && post.id === mostRecentPost[0].id) return false;
     
+    // Skip posts that are still processing or failed
+    if (post.processingStatus !== "completed") return false;
+    
     // Apply category filter
     if (selectedCategory === "All Categories") return true;
     return post.categories?.includes(selectedCategory);
@@ -185,7 +191,17 @@ export default function Home() {
         {/* Sidebar */}
         <Sidebar 
           categories={categories} 
-          onCategoryChange={setSelectedCategory} 
+          onCategoryChange={(category) => {
+            // Toggle category selection
+            if (selectedCategory === category) {
+              setSelectedCategory("All Categories");
+            } else {
+              setSelectedCategory(category);
+            }
+            // Force refetch data to ensure sidebar is consistent
+            refetchCategories();
+            refetchPosts();
+          }} 
           selectedCategories={selectedCategory === "All Categories" ? [] : [selectedCategory]}
         />
 
@@ -350,6 +366,12 @@ export default function Home() {
                                         key={cat} 
                                         category={cat} 
                                         className="text-xs"
+                                        onClick={() => {
+                                          setSelectedCategory(cat);
+                                          refetchCategories();
+                                          refetchPosts();
+                                        }}
+                                        isSelected={selectedCategory === cat}
                                       />
                                     ))}
                                   </div>

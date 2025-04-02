@@ -42,9 +42,13 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const [newCategories, setNewCategories] = useState<string[]>([]);
   
   // Fetch available categories
-  const { data: availableCategories = [] } = useQuery<string[]>({
+  const { 
+    data: availableCategories = [],
+    refetch: refetchAvailableCategories
+  } = useQuery<string[]>({
     queryKey: ['/api/categories'],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
   
   // Update post categories after state changes
@@ -79,8 +83,15 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
       });
       setIsCategoryDialogOpen(false);
       setNewCategories([]);
-      // Refresh the categories list
+      
+      // Refresh all data that depends on categories
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/posts'] });
+      
+      // Force refresh categories
+      refetchAvailableCategories();
+      
+      // Refresh parent component
       if (onRefetch) onRefetch();
     },
     onError: (error) => {
@@ -170,7 +181,13 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               {!isProcessing && !isFailed && (
                 <div className="flex flex-wrap gap-1">
                   {post.categories?.slice(0, 2).map((category) => (
-                    <CategoryFilter key={category} category={category} />
+                    <CategoryFilter 
+                      key={category} 
+                      category={category} 
+                      onClick={() => {
+                        // Same as bottom categories, clickable for consistency
+                      }}
+                    />
                   ))}
                   {post.categories && post.categories.length > 2 && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
@@ -278,7 +295,14 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             <div className="flex items-center text-gray-500 text-xs flex-wrap gap-1">
               {post.categories && post.categories.length > 0 ? (
                 post.categories.map((category) => (
-                  <CategoryFilter key={category} category={category} />
+                  <CategoryFilter 
+                    key={category} 
+                    category={category}
+                    onClick={() => {
+                      // We don't have direct access to the page state to filter,
+                      // but categories are clickable for consistency with the home page
+                    }}
+                  />
                 ))
               ) : (
                 <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
