@@ -40,13 +40,30 @@ export default function Home() {
     queryKey: ["/api/posts"],
   });
 
-  // Fetch all categories
+  // Fetch base categories from the backend
   const { 
-    data: categories = [], 
+    data: baseCategories = [], 
     isLoading: isLoadingCategories 
   } = useQuery<string[]>({
     queryKey: ["/api/categories"],
   });
+  
+  // Extract all unique categories from posts, including those not in the default list
+  const allCategoriesFromPosts = posts.reduce((acc: string[], post) => {
+    if (post.categories && Array.isArray(post.categories)) {
+      post.categories.forEach(category => {
+        if (!acc.includes(category)) {
+          acc.push(category);
+        }
+      });
+    }
+    return acc;
+  }, []);
+  
+  // Combine base categories with any additional categories from posts
+  // Convert to array to avoid Set iteration issues
+  const combinedCategories = Array.from(new Set([...baseCategories, ...allCategoriesFromPosts]));
+  const categories = combinedCategories;
 
   // Mutation for analyzing a LinkedIn post
   const { mutate: analyzePost, isPending: isAnalyzing } = useMutation({
@@ -147,9 +164,8 @@ export default function Home() {
   // Get the most recent post
   const mostRecentPost = getMostRecentPost();
   
-  // Log for debugging
+  // Log for debugging (minimal version)
   console.log("Selected author:", selectedAuthor);
-  console.log("Most recent post:", mostRecentPost);
   
   // Filter posts by category and author - exclude the most recent post from this list
   const filteredPosts = posts.filter((post) => {
@@ -178,21 +194,34 @@ export default function Home() {
     return 0;
   });
 
-  // Group posts by category for the categorized view - exclude the most recent post
+  // Group posts by category for the categorized view - include the most recent post if it matches filter
   const postsByCategory = categories.reduce((acc, category) => {
     const categoryPosts = posts.filter(post => 
-      // Skip the most recent post
-      (mostRecentPost.length === 0 || post.id !== mostRecentPost[0].id) &&
       // Include only completed posts with this category
-      post.categories?.includes(category) && post.processingStatus === "completed" &&
+      post.categories?.includes(category) && 
+      post.processingStatus === "completed" &&
       // Apply author filter if one is selected
       (!selectedAuthor || (post.authorName && post.authorName.toLowerCase().includes(selectedAuthor.toLowerCase())))
     );
+    
+    // Log for debugging
+    if (selectedAuthor && categoryPosts.length > 0) {
+      console.log(`Found ${categoryPosts.length} posts for category "${category}" by author "${selectedAuthor}"`);
+      console.log("Posts:", categoryPosts.map(p => ({ id: p.id, author: p.authorName, categories: p.categories })));
+    }
+    
     if (categoryPosts.length > 0) {
       acc[category] = categoryPosts;
     }
     return acc;
   }, {} as Record<string, Post[]>);
+  
+  // Debug info about categories
+  console.log("postsByCategory object:", Object.keys(postsByCategory));
+  console.log("All available categories:", categories);
+  console.log("Does 'Acquisition plays' exist in categories?", categories.includes("Acquisition plays"));
+  console.log("Does 'Acquisition plays' exist in postsByCategory?", "Acquisition plays" in postsByCategory);
+  console.log("Grant's post processing status:", posts.find(p => p.authorName && p.authorName.includes("Grant"))?.processingStatus);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
