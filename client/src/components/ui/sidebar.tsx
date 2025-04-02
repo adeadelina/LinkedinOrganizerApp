@@ -31,7 +31,7 @@ export function Sidebar({
   
   const displayedCategories = showAllCategories 
     ? filteredCategories
-    : filteredCategories.slice(0, 5);
+    : filteredCategories.slice(0, 10);
 
   const isActive = (path: string) => location === path;
   
@@ -144,7 +144,7 @@ export function Sidebar({
                   </label>
                 ))}
                 
-                {filteredCategories.length > 5 && (
+                {filteredCategories.length > 10 && (
                   <button 
                     onClick={() => setShowAllCategories(!showAllCategories)}
                     className="w-full flex items-center px-3 py-1 text-sm text-gray-500 hover:text-[#0A66C2]"
