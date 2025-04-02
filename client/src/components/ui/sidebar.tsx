@@ -133,52 +133,6 @@ export function Sidebar({
               </div>
             </div>
           </nav>
-          
-          {/* Calendar Component */}
-          <div className="px-3 mt-6">
-            <div className="text-xs font-medium text-gray-500 mb-2 flex justify-between items-center">
-              <span>Aug 17 - Aug 23</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#0A66C2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </div>
-            
-            {/* Days of Week */}
-            <div className="grid grid-cols-7 gap-1 text-xs text-center font-medium text-gray-500">
-              <div>S</div>
-              <div>M</div>
-              <div>T</div>
-              <div>W</div>
-              <div>T</div>
-              <div>F</div>
-              <div>S</div>
-            </div>
-            
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-1 text-xs text-center mt-1">
-              <div className="py-1 rounded text-gray-400">30</div>
-              <div className="py-1 rounded text-gray-400">31</div>
-              <div className="py-1 rounded">1</div>
-              <div className="py-1 rounded">2</div>
-              <div className="py-1 rounded">3</div>
-              <div className="py-1 rounded">4</div>
-              <div className="py-1 rounded">5</div>
-              <div className="py-1 rounded">6</div>
-              <div className="py-1 rounded">7</div>
-              <div className="py-1 rounded">8</div>
-              <div className="py-1 rounded">9</div>
-              <div className="py-1 rounded">10</div>
-              <div className="py-1 rounded">11</div>
-              <div className="py-1 rounded">12</div>
-              <div className="py-1 rounded">13</div>
-              <div className="py-1 rounded">14</div>
-              <div className="py-1 rounded">15</div>
-              <div className="py-1 rounded">16</div>
-              <div className="py-1 rounded bg-[#0A66C2] text-white">17</div>
-              <div className="py-1 rounded bg-[#EEF3F8] text-[#0A66C2]">18</div>
-              <div className="py-1 rounded bg-[#EEF3F8] text-[#0A66C2]">19</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
