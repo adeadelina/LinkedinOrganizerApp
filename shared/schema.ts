@@ -36,6 +36,11 @@ export let categories = [
   "Communication",
   "Coaching",
   "Free trial",
+  "Marketing",
+  "Sales",
+  "Acquisition",
+  "SEO",
+  "Acquisition plays"
 ];
 
 // Maximum categories a post can have
