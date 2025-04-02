@@ -5,7 +5,7 @@ import { CategoryFilter } from "@/components/category-filter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Edit, Eye, Loader2, Tag, Plus } from "lucide-react";
+import { Check, Eye, Loader2, Tag, Plus } from "lucide-react";
 import type { Post } from "@shared/schema";
 import { MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -293,7 +293,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                     className="text-xs"
                   >
                     <Tag className="h-3.5 w-3.5 mr-1" />
-                    {post.categories?.length === 0 ? "Assign Categories" : "Edit Categories"}
+                    {post.categories?.length === 0 ? "Assign Categories" : "Manage Categories"}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
