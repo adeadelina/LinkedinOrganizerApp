@@ -168,6 +168,11 @@ export default function Home() {
 
   // Group posts by category for the categorized view - exclude the most recent post
   const postsByCategory = categories.reduce((acc, category) => {
+    // Skip categories that don't match the selected category filter
+    if (selectedCategory !== "All Categories" && category !== selectedCategory) {
+      return acc;
+    }
+    
     const categoryPosts = posts.filter(post => 
       // Skip the most recent post
       (mostRecentPost.length === 0 || post.id !== mostRecentPost[0].id) &&
@@ -317,10 +322,48 @@ export default function Home() {
                     )}
                   </CardContent>
                   
+                  {/* Message when filter is active but no categories match */}
+                  {selectedCategory !== "All Categories" && Object.keys(postsByCategory).length === 0 && (
+                    <CardContent className="border-t border-gray-200 px-6 py-5">
+                      <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-center">
+                        <h3 className="text-md font-medium text-amber-800 mb-2">No posts match this category</h3>
+                        <p className="text-sm text-amber-700">There are no posts in the '{selectedCategory}' category.</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-3"
+                          onClick={() => {
+                            setSelectedCategory("All Categories");
+                            refetchCategories();
+                            refetchPosts();
+                          }}
+                        >
+                          Clear Filter
+                        </Button>
+                      </div>
+                    </CardContent>
+                  )}
+
                   {/* Categories Section */}
                   {Object.keys(postsByCategory).length > 0 && (
                     <CardContent className="border-t border-gray-200 px-6 py-5">
-                      <h2 className="text-lg font-medium text-gray-900 mb-4">Categories</h2>
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-medium text-gray-900">Categories</h2>
+                        {selectedCategory !== "All Categories" && (
+                          <div className="flex items-center">
+                            <span className="text-sm text-gray-500 mr-2">Filtered by:</span>
+                            <CategoryFilter 
+                              category={selectedCategory} 
+                              isSelected={true}
+                              onClick={() => {
+                                setSelectedCategory("All Categories");
+                                refetchCategories();
+                                refetchPosts();
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                       
                       {Object.entries(postsByCategory).map(([category, categoryPosts]) => (
                         <div key={category} className="mb-8">
