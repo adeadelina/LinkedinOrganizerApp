@@ -193,7 +193,26 @@ export async function scrapeLinkedInPost(url: string): Promise<{
     if (typeof responseData === 'string' && !responseData.includes('<')) {
       console.log('Processing plaintext response from ZenRows');
       
-      const lines = responseData.split('\n').filter(line => line.trim().length > 0);
+      // Remove unwanted LinkedIn login text
+      let cleanedResponse = responseData;
+      const startMarker = "By clicking Continue to join or sign in, you agree to LinkedIn's";
+      const endMarker = "Report this post";
+      
+      if (cleanedResponse.includes(startMarker) && cleanedResponse.includes(endMarker)) {
+        const startIndex = cleanedResponse.indexOf(startMarker);
+        const endIndex = cleanedResponse.indexOf(endMarker) + endMarker.length;
+        
+        // Check if both markers exist and are in the right order
+        if (startIndex >= 0 && endIndex > startIndex) {
+          // Extract everything before startMarker and after first endMarker
+          cleanedResponse = 
+            cleanedResponse.substring(0, startIndex) + 
+            cleanedResponse.substring(endIndex);
+          console.log('Removed LinkedIn consent text and header information');
+        }
+      }
+      
+      const lines = cleanedResponse.split('\n').filter(line => line.trim().length > 0);
       
       if (lines.length === 0) {
         throw new Error('No content found in plaintext response');
