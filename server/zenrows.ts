@@ -11,53 +11,68 @@ const ZENROWS_URL = 'https://api.zenrows.com/v1/';
 function transformLinkedInUrl(url: string): string {
   console.log(`Transforming LinkedIn URL: ${url}`);
   
-  // Process feed URLs to a more stable format
-  if (url.includes('/feed/update/')) {
-    // Extract the activity ID - try multiple patterns
-    let activityMatch = url.match(/urn:li:activity:(\d+)/);
-    
-    if (activityMatch && activityMatch[1]) {
-      const activityId = activityMatch[1];
-      console.log(`Extracted activity ID from feed URL: ${activityId}`);
-      // Use the post URL format which is more stable for scraping
-      return `https://www.linkedin.com/posts/activity-${activityId}`;
+  // First clean the URL by removing tracking parameters
+  let cleanUrl = url;
+  if (cleanUrl.includes('?')) {
+    cleanUrl = cleanUrl.split('?')[0];
+    console.log(`Removed query parameters: ${cleanUrl}`);
+  }
+  
+  // Extract the activity ID from various URL patterns
+  let activityId: string | null = null;
+  
+  // Pattern 1: /feed/update/ URLs
+  let match = cleanUrl.match(/\/feed\/update\/([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    activityId = match[1];
+    console.log(`Extracted activity ID from feed URL: ${activityId}`);
+  }
+  
+  // Pattern 2: /posts/ URLs with activity ID
+  if (!activityId) {
+    match = cleanUrl.match(/\/posts\/.*activity-([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      activityId = match[1];
+      console.log(`Extracted activity ID from posts URL: ${activityId}`);
     }
-    
-    // Try another pattern for activity
-    activityMatch = url.match(/\/feed\/update\/(\d+)/);
-    if (activityMatch && activityMatch[1]) {
-      const activityId = activityMatch[1];
-      console.log(`Extracted numeric ID from feed URL: ${activityId}`);
-      return `https://www.linkedin.com/feed/update/${activityId}`;
+  }
+  
+  // Pattern 3: Direct activity ID pattern
+  if (!activityId) {
+    match = cleanUrl.match(/activity[:\-]([a-zA-Z0-9_-]+)/i);
+    if (match && match[1]) {
+      activityId = match[1];
+      console.log(`Extracted activity ID from URL: ${activityId}`);
     }
   }
   
-  // If it's already a /posts/ URL, keep it but clean it
-  if (url.includes('/posts/')) {
-    // Keep the URL structure but remove tracking parameters
-    if (url.includes('?')) {
-      url = url.split('?')[0];
-      console.log(`Cleaned posts URL to: ${url}`);
+  // Pattern 4: urn:li:activity: pattern in the URL
+  if (!activityId) {
+    match = cleanUrl.match(/urn:li:activity:([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      activityId = match[1];
+      console.log(`Extracted activity ID from URN: ${activityId}`);
     }
-    return url;
   }
   
-  // If it contains activity but not in the right format
-  const activityMatch = url.match(/activity[:\-](\d+)/i);
-  if (activityMatch && activityMatch[1]) {
-    const activityId = activityMatch[1];
-    console.log(`Extracted activity ID from URL: ${activityId}`);
-    return `https://www.linkedin.com/posts/activity-${activityId}`;
+  // If we found an activity ID, build the most reliable URL format
+  if (activityId) {
+    // Default to the most reliable format for public post URLs
+    // Posts URLs work better than feed/update URLs
+    const transformedUrl = `https://www.linkedin.com/posts/activity-${activityId}`;
+    console.log(`Transformed to standard format: ${transformedUrl}`);
+    return transformedUrl;
   }
   
-  // Remove tracking parameters and query strings if not handled by above cases
-  if (url.includes('?')) {
-    url = url.split('?')[0];
-    console.log(`Removed query parameters, resulting URL: ${url}`);
+  // If it's already a /posts/ URL without activity, keep it as is
+  if (cleanUrl.includes('/posts/')) {
+    console.log(`Using cleaned posts URL: ${cleanUrl}`);
+    return cleanUrl;
   }
   
-  console.log(`Using transformed URL: ${url}`);
-  return url;
+  // Default case - return the cleaned URL
+  console.log(`Using cleaned URL: ${cleanUrl}`);
+  return cleanUrl;
 }
 
 /**
@@ -77,16 +92,13 @@ export async function scrapeLinkedInPost(url: string): Promise<{
     console.log(`Scraping LinkedIn post from transformed URL: ${transformedUrl}`);
     
     // Configure the request parameters for ZenRows
-    // Trying a combination of parameters that should work based on ZenRows documentation
+    // Using only parameters documented in their API reference that are known to work
     const params = {
       url: transformedUrl,
       apikey: API_KEY,
       js_render: 'true',        // Enable JavaScript rendering for dynamic content
       premium_proxy: 'true',    // Use premium proxies for better success rates
-      wait_for: '5000',         // Wait time in ms (reduced from 10000 to prevent timeouts)
-      response_type: 'plaintext', // Get plaintext to simplify parsing
-      retry: '3',               // Add retry parameter to improve success rate
-      autoparse: 'true'         // Enable automatic parsing to extract more content
+      wait_for: '10000'         // Wait time in ms - increased to allow LinkedIn to fully load
     };
 
     // Make the request to ZenRows API
@@ -98,9 +110,8 @@ export async function scrapeLinkedInPost(url: string): Promise<{
       throw new Error('No data returned from ZenRows API');
     }
     
-    // The response could be plaintext or HTML depending on the response_type parameter
     const responseData = response.data;
-    console.log(`Received response of length: ${typeof responseData === 'string' ? responseData.length : JSON.stringify(responseData).length}`);
+    console.log(`Received response type: ${typeof responseData}`);
     
     // For debugging purposes in development, save a sample of the response
     if (process.env.NODE_ENV !== 'production') {
@@ -110,17 +121,81 @@ export async function scrapeLinkedInPost(url: string): Promise<{
       console.log('Sample response:', sampleText);
     }
     
-    // Handle plaintext response (when response_type = 'plaintext')
-    if (typeof responseData === 'string' && !responseData.includes('<')) {
-      // It's a plaintext response
-      console.log('Processing plaintext response from ZenRows');
+    // Check if response is from custom_js (object with structured data)
+    if (typeof responseData === 'object' && responseData !== null) {
+      console.log('Processing object response from custom_js extraction');
       
-      // For plaintext responses, we'll have to extract information based on patterns
-      // Common format for LinkedIn posts in plaintext might be:
-      // Author Name
-      // Title/Role (optional)
-      // Content
-      // Timestamp (sometimes)
+      // Check if there was an error in the custom JS
+      if (responseData.error) {
+        console.error(`Error in custom JS extraction: ${responseData.error}`);
+      }
+      
+      const authorName = responseData.authorName || 'LinkedIn User';
+      const authorImage = responseData.authorImage || '';
+      const content = responseData.content || 'No content available';
+      
+      // Process the date string if it exists
+      let publishedDate = new Date();
+      if (responseData.publishedDate) {
+        try {
+          // Try to parse date string like "2w" (2 weeks), "3d" (3 days), etc.
+          const timePeriodMatch = responseData.publishedDate.match(/(\d+)([wdhm])/);
+          if (timePeriodMatch) {
+            const value = parseInt(timePeriodMatch[1]);
+            const unit = timePeriodMatch[2];
+            
+            publishedDate = new Date();
+            if (unit === 'w') publishedDate.setDate(publishedDate.getDate() - (value * 7));
+            else if (unit === 'd') publishedDate.setDate(publishedDate.getDate() - value);
+            else if (unit === 'h') publishedDate.setHours(publishedDate.getHours() - value);
+            else if (unit === 'm') publishedDate.setMinutes(publishedDate.getMinutes() - value);
+          } else {
+            // If it's not a time period, try to parse it directly
+            const parsedDate = new Date(responseData.publishedDate);
+            if (!isNaN(parsedDate.getTime())) {
+              publishedDate = parsedDate;
+            }
+          }
+        } catch (error) {
+          console.error(`Error parsing date: ${error}`);
+        }
+      }
+      
+      // Log the extracted information
+      console.log(`Extracted from custom JS: Author: "${authorName}", Content length: ${content ? content.length : 0}`);
+      
+      // If we have both author and content, return the extracted data
+      if (authorName && content && content.length > 20) {
+        return {
+          authorName,
+          authorImage,
+          content,
+          publishedDate
+        };
+      }
+      
+      // If we got rawHtml as fallback and missing content, try to extract from HTML
+      if (responseData.rawHtml && (!content || content.length < 20)) {
+        console.log('Using rawHtml fallback for extraction');
+        const html = responseData.rawHtml;
+        
+        // Try to extract missing fields from HTML
+        const extractedAuthorName = !authorName || authorName === 'LinkedIn User' ? extractAuthorName(html) || authorName : authorName;
+        const extractedAuthorImage = !authorImage ? extractAuthorImage(html) || '' : authorImage;
+        const extractedContent = !content || content.length < 20 ? extractPostContent(html) || 'No content available' : content;
+        
+        return {
+          authorName: extractedAuthorName,
+          authorImage: extractedAuthorImage,
+          content: extractedContent,
+          publishedDate
+        };
+      }
+    }
+    
+    // Handle plaintext response (basic string response)
+    if (typeof responseData === 'string' && !responseData.includes('<')) {
+      console.log('Processing plaintext response from ZenRows');
       
       const lines = responseData.split('\n').filter(line => line.trim().length > 0);
       
@@ -154,10 +229,11 @@ export async function scrapeLinkedInPost(url: string): Promise<{
       };
     }
     
-    // If we reach here, it's HTML response
+    // If we reach here, it's raw HTML response
+    console.log('Processing HTML response from ZenRows');
     const html = responseData;
     
-    // Extract information from the HTML response
+    // Extract information from the HTML response using our fallback methods
     const authorName = extractAuthorName(html) || 'LinkedIn User';
     const authorImage = extractAuthorImage(html) || '';
     const content = extractPostContent(html) || 'No content available';
