@@ -92,10 +92,10 @@ export async function scrapeLinkedInPost(url: string): Promise<{
     
     // Configure the request parameters for ZenRows with the exact parameters as specified
     const params = {
-      'url': url,
-      'apikey': API_KEY,
-      'response_type': 'plaintext',
-    };
+                'url': url,
+                'apikey': API_KEY,
+                'autoparse': 'true',
+        };
 
     // Make the request to ZenRows API
     console.log('Sending request to ZenRows API...');
