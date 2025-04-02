@@ -49,14 +49,32 @@ export default function Home() {
   // Mutation for analyzing a LinkedIn post
   const { mutate: analyzePost, isPending: isAnalyzing } = useMutation({
     mutationFn: async (url: string) => {
+      // Check if a post with this URL already exists to prevent duplicates
+      const allPosts = await apiRequest("GET", "/api/posts").then(res => res.json());
+      const existingPost = allPosts.find((post: Post) => post.url === url);
+      
+      if (existingPost) {
+        // Return the existing post instead of creating a new one
+        return { post: existingPost, message: "Post already exists" };
+      }
+      
+      // If no duplicate, proceed with analysis
       const res = await apiRequest("POST", "/api/analyze", { url });
       return res.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: "Content submitted for analysis",
-        description: "Your content is being analyzed. Results will appear shortly.",
-      });
+      if (data.message === "Post already exists") {
+        toast({
+          title: "URL already analyzed",
+          description: "This content has already been analyzed and is in your library.",
+        });
+      } else {
+        toast({
+          title: "Content submitted for analysis",
+          description: "Your content is being analyzed. Results will appear shortly.",
+        });
+      }
+      // Only reset the form after showing the toast message
       form.reset();
       refetchPosts();
     },
@@ -71,6 +89,9 @@ export default function Home() {
 
   // Form submission handler
   const onSubmit = async (data: { url: string }) => {
+    // Don't submit if already analyzing
+    if (isAnalyzing) return;
+    
     analyzePost(data.url);
   };
 
