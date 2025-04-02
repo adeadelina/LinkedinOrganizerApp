@@ -193,42 +193,75 @@ export async function scrapeLinkedInPost(url: string): Promise<{
     if (typeof responseData === 'string' && !responseData.includes('<')) {
       console.log('Processing plaintext response from ZenRows');
       
-      // Remove unwanted LinkedIn login text
-      let cleanedResponse = responseData;
-      const startMarker = "By clicking Continue to join or sign in, you agree to LinkedIn's";
-      const endMarker = "Report this post";
+      // Process the text line by line for more precision
+      const allLines = responseData.split('\n');
+      let processedLines = [];
+      let foundHeader = false;
+      let foundAuthorSection = false;
+      let authorNameLine = '';
+      let authorRoleLine = '';
       
-      if (cleanedResponse.includes(startMarker) && cleanedResponse.includes(endMarker)) {
-        const startIndex = cleanedResponse.indexOf(startMarker);
-        const endIndex = cleanedResponse.indexOf(endMarker) + endMarker.length;
+      // Find the actual post content, skipping LinkedIn header
+      for (let i = 0; i < allLines.length; i++) {
+        const line = allLines[i].trim();
         
-        // Check if both markers exist and are in the right order
-        if (startIndex >= 0 && endIndex > startIndex) {
-          // Extract everything before startMarker and after first endMarker
-          cleanedResponse = 
-            cleanedResponse.substring(0, startIndex) + 
-            cleanedResponse.substring(endIndex);
-          console.log('Removed LinkedIn consent text and header information');
+        // Skip empty lines
+        if (line.length === 0) continue;
+        
+        // Check if we found the author's post section
+        if (line.endsWith("'s Post") || line.includes("'s Post")) {
+          foundAuthorSection = true;
+          authorNameLine = line.replace("'s Post", "").trim();
+          continue;
+        }
+        
+        // If we found the author's section, the next non-empty line is likely the author's role
+        if (foundAuthorSection && authorRoleLine === '') {
+          authorRoleLine = line;
+          continue;
+        }
+        
+        // Skip LinkedIn header sections
+        if (line === "Agree & Join LinkedIn" || 
+            line.includes("User Agreement") || 
+            line.includes("Privacy Policy") || 
+            line.includes("Cookie Policy") || 
+            line === "LinkedIn" ||
+            line === "Articles" ||
+            line === "People" ||
+            line === "Learning" ||
+            line === "Jobs" ||
+            line === "Games" ||
+            line === "Get the app" ||
+            line === "Join now" ||
+            line === "Sign in" ||
+            line.startsWith("By clicking Continue")) {
+          continue;
+        }
+        
+        // When we find "Report this post", we've found the start of the actual content
+        if (line === "Report this post") {
+          foundHeader = true;
+          continue; // Skip this line
+        }
+        
+        // Only add lines after we've found the header
+        if (foundHeader) {
+          processedLines.push(line);
         }
       }
       
-      const lines = cleanedResponse.split('\n').filter(line => line.trim().length > 0);
-      
-      if (lines.length === 0) {
-        throw new Error('No content found in plaintext response');
+      if (processedLines.length === 0) {
+        throw new Error('No content found in plaintext response after processing');
       }
       
-      // Assume the first line might be the author name
-      const authorName = lines[0].trim() || 'LinkedIn User';
+      console.log(`Processed ${processedLines.length} lines of content after removing LinkedIn headers`);
       
-      // Skip title/role line if it exists (typically shorter and doesn't look like content)
-      let contentStartIndex = 1;
-      if (lines.length > 1 && lines[1].length < 50 && !lines[1].includes('.')) {
-        contentStartIndex = 2;
-      }
+      // Use the author name we found in the post, or default if not found
+      const authorName = authorNameLine || 'LinkedIn User';
       
-      // Join the remaining lines as content
-      const content = lines.slice(contentStartIndex).join('\n').trim() || 'No content available';
+      // Join the processed lines as content
+      const content = processedLines.join('\n').trim() || 'No content available';
       
       // We don't have image or date in plaintext, so use defaults
       const authorImage = '';
