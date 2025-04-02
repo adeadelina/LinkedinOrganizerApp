@@ -5,7 +5,7 @@ import { CategoryFilter } from "@/components/category-filter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Eye, Loader2, Tag, Plus } from "lucide-react";
+import { Check, Eye, Loader2, Tag, Plus, Edit2, X } from "lucide-react";
 import type { Post } from "@shared/schema";
 import { MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PostCardProps {
   post: Post;
@@ -203,7 +204,6 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   {getTimeElapsed(post.createdAt)}
                 </p>
               </div>
-              {/* Categories removed from top of post */}
             </div>
           </div>
         </div>
@@ -299,7 +299,60 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         )}
         
         {!isProcessing && !isFailed && (
-          <div className="mt-4 flex justify-between">
+          <div className="mt-4 flex flex-col space-y-3">
+            {/* Category section header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <h4 className="text-xs font-medium text-gray-700 mr-2">Categories:</h4>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={() => setIsCategoryDialogOpen(true)}
+                      >
+                        <Edit2 className="h-3.5 w-3.5 text-blue-600" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Edit categories</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={() => setIsCategoryDialogOpen(true)}
+                >
+                  <Edit2 className="h-3.5 w-3.5 mr-1" />
+                  Edit Categories
+                </Button>
+                
+                <a 
+                  href={post.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                >
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50"
+                  >
+                    <Eye className="h-3.5 w-3.5 mr-1" />
+                    View
+                  </Button>
+                </a>
+              </div>
+            </div>
+            
+            {/* Category badges */}
             <div className="flex items-center text-gray-500 text-xs flex-wrap gap-1">
               {post.categories && post.categories.length > 0 ? (
                 // Remove duplicate categories
@@ -309,192 +362,163 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <CategoryFilter 
                     key={category} 
                     category={category}
-                    onClick={() => {
-                      // We don't have direct access to the page state to filter,
-                      // but categories are clickable for consistency with the home page
-                    }}
+                    onClick={() => {}}
                   />
                 ))
               ) : (
                 <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
                   <Tag className="h-3 w-3 mr-1" />
-                  Categories needed
+                  No categories assigned
                 </div>
               )}
             </div>
-            <div className="flex space-x-2">
-              <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs"
-                  >
-                    <Tag className="h-3.5 w-3.5 mr-1" />
-                    {post.categories?.length === 0 ? "Assign Categories" : "Manage Categories"}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Manage Categories</DialogTitle>
-                    <DialogDescription>
-                      Select the categories that best match this post's content.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto p-2">
-                      {availableCategories.map((category: string) => (
-                        <div key={category} className="flex items-center space-x-2 border rounded p-2">
-                          <Checkbox 
-                            id={`category-${category}`} 
-                            checked={selectedCategories.includes(category)}
-                            onCheckedChange={() => handleCategoryChange(category)}
-                            disabled={
-                              !selectedCategories.includes(category) && 
-                              selectedCategories.length >= MAX_CATEGORIES_PER_POST
-                            }
-                          />
-                          <label 
-                            htmlFor={`category-${category}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                          >
-                            {category}
-                          </label>
-                          {selectedCategories.includes(category) && (
-                            <Badge variant="secondary" className="ml-auto">Selected</Badge>
-                          )}
-                        </div>
-                      ))}
-
-                      {/* New categories section */}
-                      {newCategories.length > 0 && (
-                        <div className="mt-2 border-t pt-3">
-                          <h4 className="text-sm font-medium mb-2">Your new categories:</h4>
-                          {newCategories.map((category, index) => (
-                            <div key={`new-${index}`} className="flex items-center space-x-2 border rounded p-2 mb-2 bg-green-50">
-                              <Checkbox 
-                                id={`category-new-${index}`} 
-                                checked={selectedCategories.includes(category)}
-                                onCheckedChange={() => handleCategoryChange(category)}
-                                disabled={
-                                  !selectedCategories.includes(category) && 
-                                  selectedCategories.length >= MAX_CATEGORIES_PER_POST
-                                }
-                              />
-                              <label 
-                                htmlFor={`category-new-${index}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                              >
-                                {category}
-                              </label>
-                              <Badge variant="outline" className="bg-green-100">New</Badge>
-                              {selectedCategories.includes(category) && (
-                                <Badge variant="secondary" className="ml-1">Selected</Badge>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Add new category input */}
-                    <div className="mt-4 mb-2">
-                      <h4 className="text-sm font-medium mb-2">Add a new category:</h4>
-                      <div className="flex gap-2">
-                        <Input
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          placeholder="Enter new category"
-                          className="flex-1"
-                        />
-                        <Button 
-                          type="button" 
-                          size="sm"
-                          onClick={() => {
-                            if (newCategory.trim()) {
-                              // Add to new categories list
-                              setNewCategories(prev => [...prev, newCategory.trim()]);
-                              // Also select it
-                              if (selectedCategories.length < MAX_CATEGORIES_PER_POST) {
-                                setSelectedCategories(prev => [...prev, newCategory.trim()]);
-                              }
-                              // Clear input
-                              setNewCategory('');
-                            }
-                          }}
-                          disabled={!newCategory.trim()}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
-                      <p className="text-xs text-amber-800">
-                        Selected categories: {selectedCategories.length ? 
-                          selectedCategories.join(', ') : 
-                          'None (please select at least one)'}
-                      </p>
-                      <p className="text-xs text-amber-800 mt-1">
-                        {selectedCategories.length}/{MAX_CATEGORIES_PER_POST} maximum categories used
-                      </p>
-                    </div>
-                  </div>
-                  <DialogFooter className="sm:justify-between">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedCategories(post.categories || []);
-                        setNewCategories([]);
-                        setNewCategory('');
-                        setIsCategoryDialogOpen(false);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="button" 
-                      size="sm" 
-                      onClick={handleSaveCategories}
-                      disabled={updateCategoriesMutation.isPending}
-                    >
-                      {updateCategoriesMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-3.5 w-3.5 mr-1" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              
-              <a 
-                href={post.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block"
-              >
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50"
-                >
-                  <Eye className="h-3.5 w-3.5 mr-1" />
-                  View
-                </Button>
-              </a>
-            </div>
           </div>
         )}
+        
+        {/* Category Edit Dialog */}
+        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Manage Categories</DialogTitle>
+              <DialogDescription>
+                Select the categories that best match this post's content.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto p-2">
+                {availableCategories.map((category: string) => (
+                  <div key={category} className="flex items-center space-x-2 border rounded p-2">
+                    <Checkbox 
+                      id={`category-${category}`} 
+                      checked={selectedCategories.includes(category)}
+                      onCheckedChange={() => handleCategoryChange(category)}
+                      disabled={
+                        !selectedCategories.includes(category) && 
+                        selectedCategories.length >= MAX_CATEGORIES_PER_POST
+                      }
+                    />
+                    <label 
+                      htmlFor={`category-${category}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                    >
+                      {category}
+                    </label>
+                    {selectedCategories.includes(category) && (
+                      <Badge variant="secondary" className="ml-auto">Selected</Badge>
+                    )}
+                  </div>
+                ))}
+
+                {/* New categories section */}
+                {newCategories.length > 0 && (
+                  <div className="mt-2 border-t pt-3">
+                    <h4 className="text-sm font-medium mb-2">Your new categories:</h4>
+                    {newCategories.map((category, index) => (
+                      <div key={`new-${index}`} className="flex items-center space-x-2 border rounded p-2 mb-2 bg-green-50">
+                        <Checkbox 
+                          id={`category-new-${index}`} 
+                          checked={selectedCategories.includes(category)}
+                          onCheckedChange={() => handleCategoryChange(category)}
+                          disabled={
+                            !selectedCategories.includes(category) && 
+                            selectedCategories.length >= MAX_CATEGORIES_PER_POST
+                          }
+                        />
+                        <label 
+                          htmlFor={`category-new-${index}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                        >
+                          {category}
+                        </label>
+                        <Badge variant="outline" className="bg-green-100">New</Badge>
+                        {selectedCategories.includes(category) && (
+                          <Badge variant="secondary" className="ml-1">Selected</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Add new category input */}
+              <div className="mt-4 mb-2">
+                <h4 className="text-sm font-medium mb-2">Add a new category:</h4>
+                <div className="flex gap-2">
+                  <Input
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Enter new category"
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    size="sm"
+                    onClick={() => {
+                      if (newCategory.trim()) {
+                        // Add to new categories list
+                        setNewCategories(prev => [...prev, newCategory.trim()]);
+                        // Also select it
+                        if (selectedCategories.length < MAX_CATEGORIES_PER_POST) {
+                          setSelectedCategories(prev => [...prev, newCategory.trim()]);
+                        }
+                        // Clear input
+                        setNewCategory('');
+                      }
+                    }}
+                    disabled={!newCategory.trim()}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
+                <p className="text-xs text-amber-800">
+                  Selected categories: {selectedCategories.length ? 
+                    selectedCategories.join(', ') : 
+                    'None (please select at least one)'}
+                </p>
+                <p className="text-xs text-amber-800 mt-1">
+                  {selectedCategories.length}/{MAX_CATEGORIES_PER_POST} maximum categories used
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-between">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setSelectedCategories(post.categories || []);
+                  setNewCategories([]);
+                  setNewCategory('');
+                  setIsCategoryDialogOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                size="sm" 
+                onClick={handleSaveCategories}
+                disabled={updateCategoriesMutation.isPending}
+              >
+                {updateCategoriesMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3.5 w-3.5 mr-1" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
