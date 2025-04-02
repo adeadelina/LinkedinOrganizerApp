@@ -50,16 +50,16 @@ export async function analyzePostContent(
       confidence: Math.max(0, Math.min(1, result.confidence || 0.5)),
       summary: result.summary || "No summary available"
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing post content:", error);
-    throw new Error(`Failed to analyze content: ${error.message}`);
+    throw new Error(`Failed to analyze content: ${error.message || 'Unknown error'}`);
   }
 }
 
 /**
  * Extracts information from LinkedIn post URL
  * @param url LinkedIn post URL
- * @returns Mock extraction result with placeholder data
+ * @returns Extraction result with real data from ZenRows API
  */
 export async function extractLinkedInPostInfo(url: string): Promise<{
   authorName: string;
@@ -67,40 +67,21 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
   content: string;
   publishedDate: Date;
 }> {
-  // In a real implementation, you would use web scraping or the LinkedIn API
-  // For this demo, we'll simulate extraction with sample data based on URL hash
+  // Import the ZenRows scraper here to avoid circular dependencies
+  const { scrapeLinkedInPost } = await import('./zenrows');
   
   try {
-    // Since we can't actually scrape LinkedIn (would require auth + against TOS),
-    // we'll use OpenAI to generate plausible post content
-    const prompt = `
-      Given this LinkedIn post URL: ${url}
-      Generate plausible LinkedIn post content that you would expect to see.
-      The content should be appropriate for business/professional networking.
-      
-      Provide your response in JSON format with the following properties:
-      - authorName: a plausible LinkedIn user's name
-      - content: the post content (between 2-5 paragraphs)
-      - publishedDate: an ISO date string for a recent date
-    `;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", 
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      temperature: 0.7
-    });
-
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    // Use ZenRows API to extract real LinkedIn post data
+    const extractedData = await scrapeLinkedInPost(url);
     
     return {
-      authorName: result.authorName || "LinkedIn User",
-      authorImage: "", // Would be an actual image URL in a real implementation
-      content: result.content || "No content available",
-      publishedDate: new Date(result.publishedDate || new Date()),
+      authorName: extractedData.authorName,
+      authorImage: extractedData.authorImage,
+      content: extractedData.content,
+      publishedDate: extractedData.publishedDate,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error extracting post info:", error);
-    throw new Error(`Failed to extract LinkedIn post info: ${error.message}`);
+    throw new Error(`Failed to extract LinkedIn post info: ${error.message || 'Unknown error'}`);
   }
 }

@@ -77,7 +77,20 @@ export class MemStorage implements IStorage {
   async createPost(insertPost: InsertPost): Promise<Post> {
     const id = this.postCurrentId++;
     const createdAt = new Date();
-    const post: Post = { ...insertPost, id, createdAt };
+    
+    // Create a properly typed Post object with defaults for nullable fields
+    const post: Post = {
+      id,
+      url: insertPost.url,
+      authorName: insertPost.authorName || null,
+      authorImage: insertPost.authorImage || null,
+      content: insertPost.content || null,
+      publishedDate: insertPost.publishedDate || null,
+      categories: insertPost.categories || null,
+      processingStatus: insertPost.processingStatus || "processing",
+      createdAt
+    };
+    
     this.posts.set(id, post);
     return post;
   }
@@ -86,7 +99,18 @@ export class MemStorage implements IStorage {
     const post = this.posts.get(id);
     if (!post) return undefined;
 
-    const updatedPost = { ...post, ...postUpdate };
+    // Handle each field individually to ensure correct types
+    const updatedPost: Post = {
+      ...post,
+      // Only update fields that are provided in postUpdate
+      authorName: postUpdate.authorName !== undefined ? postUpdate.authorName : post.authorName,
+      authorImage: postUpdate.authorImage !== undefined ? postUpdate.authorImage : post.authorImage,
+      content: postUpdate.content !== undefined ? postUpdate.content : post.content,
+      publishedDate: postUpdate.publishedDate !== undefined ? postUpdate.publishedDate : post.publishedDate,
+      categories: postUpdate.categories !== undefined ? postUpdate.categories : post.categories,
+      processingStatus: postUpdate.processingStatus !== undefined ? postUpdate.processingStatus : post.processingStatus
+    };
+    
     this.posts.set(id, updatedPost);
     return updatedPost;
   }
