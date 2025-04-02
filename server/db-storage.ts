@@ -114,6 +114,17 @@ export class DbStorage implements IStorage {
     return result;
   }
 
+  async getPostsByAuthor(author: string): Promise<Post[]> {
+    // Query posts where the author name includes the search term
+    // Using PostgreSQL's ILIKE for case-insensitive search
+    const result = await db.select()
+      .from(posts)
+      .where(sql`${posts.authorName} ILIKE ${`%${author}%`}`)
+      .orderBy(desc(posts.createdAt));
+    
+    return result;
+  }
+
   async createPost(insertPost: InsertPost): Promise<Post> {
     const result = await db.insert(posts).values(insertPost).returning();
     return result[0];

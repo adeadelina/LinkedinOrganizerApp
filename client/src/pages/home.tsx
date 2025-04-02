@@ -21,6 +21,7 @@ export default function Home() {
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [sortOrder, setSortOrder] = useState<string>("Most Recent");
+  const [selectedAuthor, setSelectedAuthor] = useState<string>("");
   
   // Create form with zod validation
   const form = useForm<{ url: string }>({
@@ -139,10 +140,15 @@ export default function Home() {
   // Get the most recent post
   const mostRecentPost = getMostRecentPost();
   
-  // Filter posts by category - exclude the most recent post from this list
+  // Filter posts by category and author - exclude the most recent post from this list
   const filteredPosts = posts.filter((post) => {
     // Skip the most recent post since it's displayed separately
     if (mostRecentPost.length > 0 && post.id === mostRecentPost[0].id) return false;
+    
+    // Apply author filter if one is selected
+    if (selectedAuthor && (!post.authorName || !post.authorName.toLowerCase().includes(selectedAuthor.toLowerCase()))) {
+      return false;
+    }
     
     // Apply category filter
     if (selectedCategory === "All Categories") return true;
@@ -166,7 +172,9 @@ export default function Home() {
       // Skip the most recent post
       (mostRecentPost.length === 0 || post.id !== mostRecentPost[0].id) &&
       // Include only completed posts with this category
-      post.categories?.includes(category) && post.processingStatus === "completed"
+      post.categories?.includes(category) && post.processingStatus === "completed" &&
+      // Apply author filter if one is selected
+      (!selectedAuthor || (post.authorName && post.authorName.toLowerCase().includes(selectedAuthor.toLowerCase())))
     );
     if (categoryPosts.length > 0) {
       acc[category] = categoryPosts;
@@ -187,6 +195,7 @@ export default function Home() {
           categories={categories} 
           onCategoryChange={setSelectedCategory} 
           selectedCategories={selectedCategory === "All Categories" ? [] : [selectedCategory]}
+          onAuthorSearch={setSelectedAuthor}
         />
 
         {/* Main Content */}
@@ -240,7 +249,22 @@ export default function Home() {
                 {/* Results Section */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between px-6 py-5">
-                    <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
+                    <div>
+                      <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
+                      {selectedAuthor && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Filtering by author: <span className="font-medium">{selectedAuthor}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-2 h-5 px-1" 
+                            onClick={() => setSelectedAuthor("")}
+                          >
+                            ✕
+                          </Button>
+                        </p>
+                      )}
+                    </div>
                     <div className="flex space-x-2">
                       <Select 
                         value={selectedCategory} 

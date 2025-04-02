@@ -46,6 +46,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get posts by author name
+  app.get("/api/posts/author/:author", async (req: Request, res: Response) => {
+    try {
+      const { author } = req.params;
+      const posts = await storage.getPostsByAuthor(author);
+      res.json(posts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch posts by author" });
+    }
+  });
+
   // Submit a LinkedIn or Substack URL for analysis
   app.post("/api/analyze", async (req: Request, res: Response) => {
     try {
