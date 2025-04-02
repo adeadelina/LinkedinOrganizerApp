@@ -268,41 +268,14 @@ export default function Home() {
                     </div>
                   ) : (
                     <div>
-                      {/* Show processing and analyzing content at the top */}
-                      {sortedPosts
-                        .filter(post => post.processingStatus === "processing" || post.processingStatus === "extracting" || post.processingStatus === "analyzing")
-                        .map((post) => (
-                          <PostCard 
-                            key={post.id} 
-                            post={post} 
-                            onRefetch={refetchPosts}
-                          />
-                        ))
-                      }
-                      
-                      {/* Show failed content next */}
-                      {sortedPosts
-                        .filter(post => post.processingStatus === "failed")
-                        .map((post) => (
-                          <PostCard 
-                            key={post.id} 
-                            post={post} 
-                            onRefetch={refetchPosts}
-                          />
-                        ))
-                      }
-                      
-                      {/* Show completed content last */}
-                      {sortedPosts
-                        .filter(post => post.processingStatus === "completed")
-                        .map((post) => (
-                          <PostCard 
-                            key={post.id} 
-                            post={post} 
-                            onRefetch={refetchPosts}
-                          />
-                        ))
-                      }
+                      {/* Display all posts with their status */}
+                      {sortedPosts.map((post) => (
+                        <PostCard 
+                          key={post.id} 
+                          post={post} 
+                          onRefetch={refetchPosts}
+                        />
+                      ))}
                     </div>
                   )}
                 </CardContent>
