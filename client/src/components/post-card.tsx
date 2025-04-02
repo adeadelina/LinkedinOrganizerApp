@@ -1,14 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryFilter } from "@/components/category-filter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Edit, Eye, Loader2, X } from "lucide-react";
+import { Check, Edit, Eye, Loader2, X, Tag } from "lucide-react";
 import type { Post } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 
 interface PostCardProps {
   post: Post;
@@ -21,6 +37,21 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualContent, setManualContent] = useState("");
   const [authorName, setAuthorName] = useState(post.authorName || "");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  
+  // Fetch available categories
+  const { data: availableCategories = [] } = useQuery({
+    queryKey: ['/api/categories'],
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+  
+  // Update post categories after state changes
+  useEffect(() => {
+    if (post.categories) {
+      setSelectedCategories(post.categories);
+    }
+  }, [post.categories]);
   
   const isProcessing = post.processingStatus === "processing";
   const isFailed = post.processingStatus === "failed";
@@ -50,6 +81,56 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
       });
     }
   });
+  
+  // Mutation for updating post categories
+  const updateCategoriesMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(
+        "POST",
+        `/api/posts/${post.id}/update-categories`,
+        { categories: selectedCategories }
+      );
+    },
+    onSuccess: () => {
+      toast({
+        title: "Categories updated",
+        description: "The post categories have been successfully updated.",
+      });
+      setIsCategoryDialogOpen(false);
+      if (onRefetch) onRefetch();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating categories",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handle category selection change
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(category)) {
+        return prev.filter(c => c !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
+  
+  // Handle save categories
+  const handleSaveCategories = () => {
+    if (selectedCategories.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one category",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateCategoriesMutation.mutate();
+  };
   
   // Format the time elapsed since post was created
   const getTimeElapsed = (date?: Date | string | null) => {
@@ -347,6 +428,89 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                 ))}
               </div>
               <div className="flex space-x-2">
+                {/* Category Management Dialog */}
+                <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                    >
+                      <Tag className="h-3.5 w-3.5 mr-1" />
+                      Categories
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Manage Categories</DialogTitle>
+                      <DialogDescription>
+                        Select the categories that best match this post's content.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto p-2">
+                        {availableCategories.map((category) => (
+                          <div key={category} className="flex items-center space-x-2 border rounded p-2">
+                            <Checkbox 
+                              id={`category-${category}`} 
+                              checked={selectedCategories.includes(category)}
+                              onCheckedChange={() => handleCategoryChange(category)}
+                            />
+                            <label 
+                              htmlFor={`category-${category}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                            >
+                              {category}
+                            </label>
+                            {selectedCategories.includes(category) && (
+                              <Badge variant="secondary" className="ml-auto">Selected</Badge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
+                        <p className="text-xs text-amber-800">
+                          Selected categories: {selectedCategories.length ? 
+                            selectedCategories.join(', ') : 
+                            'None (please select at least one)'}
+                        </p>
+                      </div>
+                    </div>
+                    <DialogFooter className="sm:justify-between">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCategories(post.categories || []);
+                          setIsCategoryDialogOpen(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        onClick={handleSaveCategories}
+                        disabled={updateCategoriesMutation.isPending}
+                      >
+                        {updateCategoriesMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-3.5 w-3.5 mr-1" />
+                            Save Changes
+                          </>
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -356,6 +520,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <Edit className="h-3.5 w-3.5 mr-1" />
                   Edit
                 </Button>
+                
                 <a 
                   href={post.url}
                   target="_blank"

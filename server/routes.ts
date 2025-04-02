@@ -141,6 +141,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Manually update post categories
+  app.post("/api/posts/:id/update-categories", async (req: Request, res: Response) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getPostById(postId);
+      
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      // Validate the incoming data
+      const { categories } = req.body;
+      
+      if (!categories || !Array.isArray(categories) || categories.length === 0) {
+        return res.status(400).json({ error: "At least one category is required" });
+      }
+      
+      // Validate categories against available categories
+      const availableCategories = await storage.getAllCategories();
+      const invalidCategories = categories.filter(cat => !availableCategories.includes(cat));
+      
+      if (invalidCategories.length > 0) {
+        return res.status(400).json({ 
+          error: `Invalid categories: ${invalidCategories.join(', ')}`,
+          availableCategories
+        });
+      }
+      
+      // Update the post with the new categories
+      const updatedPost = await storage.updatePost(postId, { categories });
+      
+      console.log(`[Post ${postId}] Categories manually updated to: ${categories.join(', ')}`);
+      
+      return res.json(updatedPost);
+    } catch (error) {
+      console.error("Error updating post categories:", error);
+      res.status(500).json({ error: "Failed to update post categories" });
+    }
+  });
+  
   // Manually update post content when automatic extraction fails
   app.post("/api/posts/:id/manual-content", async (req: Request, res: Response) => {
     try {
