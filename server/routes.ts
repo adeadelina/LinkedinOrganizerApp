@@ -216,28 +216,24 @@ async function processContentPost(postId: number, url: string): Promise<void> {
       return; // Early exit if extraction fails
     }
 
-    // 2. Analyze the content and categorize it
-    console.log(`[Post ${postId}] Analyzing and categorizing content`);
+    // 2. Skip AI analysis and directly assign the "PLG Strategy" category as requested
+    console.log(`[Post ${postId}] Skipping AI analysis and assigning to PLG Strategy category`);
     try {
-      const categories = await storage.getAllCategories();
-      const analysis = await analyzePostContent(extractedInfo.content, categories);
+      // Directly assign "PLG Strategy" as the category
+      const assignedCategory = "PLG Strategy";
       
-      if (!analysis.categories || analysis.categories.length === 0) {
-        throw new Error('No categories were assigned to the post content');
-      }
-      
-      // 3. Update the post with categories and set status to completed
+      // 3. Update the post with the assigned category and set status to completed
       await storage.updatePost(postId, {
-        categories: analysis.categories,
-        summary: analysis.summary,
-        confidence: analysis.confidence.toString(), // Convert number to string
+        categories: [assignedCategory],
+        summary: "Content extracted from LinkedIn post", // Simple summary
+        confidence: "1.0", // High confidence since we're manually assigning
         processingStatus: "completed",
         processError: null
       });
       
-      console.log(`[Post ${postId}] Successfully analyzed and categorized into: ${analysis.categories.join(', ')}`);
+      console.log(`[Post ${postId}] Successfully categorized into: ${assignedCategory}`);
     } catch (analysisError: any) {
-      console.error(`[Post ${postId}] Analysis error:`, analysisError);
+      console.error(`[Post ${postId}] Error assigning category:`, analysisError);
       // Still keep the extracted content but mark analysis as failed
       await storage.updatePost(postId, {
         processingStatus: "failed",
