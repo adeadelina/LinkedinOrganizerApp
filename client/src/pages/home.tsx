@@ -37,6 +37,12 @@ export default function Home() {
     refetch: refetchPosts 
   } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
+    staleTime: 1000, // Consider data stale after 1 second
+    refetchInterval: 3000, // Poll every 3 seconds
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
   });
 
   // Fetch all categories
@@ -47,7 +53,11 @@ export default function Home() {
   } = useQuery<string[]>({
     queryKey: ["/api/categories"],
     staleTime: 0, // Always fetch fresh data
-    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchInterval: 3000, // Aggressively poll every 3 seconds
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always", // Always refetch when window regains focus
+    refetchOnReconnect: "always"
   });
 
   // Mutation for analyzing a LinkedIn post

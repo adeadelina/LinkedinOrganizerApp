@@ -84,12 +84,29 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
       setIsCategoryDialogOpen(false);
       setNewCategories([]);
       
-      // Refresh all data that depends on categories
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/posts'] });
+      // Refresh all data that depends on categories with immediate refetching
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/categories'],
+        refetchType: 'active',
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/posts'],
+        refetchType: 'active',
+      });
       
-      // Force refresh categories
-      refetchAvailableCategories();
+      // Force multiple refreshes to ensure we get the latest data
+      setTimeout(() => {
+        // First immediate refresh
+        refetchAvailableCategories()
+          .then(() => {
+            console.log("Categories refreshed successfully");
+            // Second refresh after a short delay
+            setTimeout(() => {
+              refetchAvailableCategories();
+              if (onRefetch) onRefetch();
+            }, 500);
+          });
+      }, 100);
       
       // Refresh parent component
       if (onRefetch) onRefetch();
