@@ -210,13 +210,43 @@ export default function Home() {
                       No posts have been analyzed yet. Enter a LinkedIn URL above to get started.
                     </div>
                   ) : (
-                    sortedPosts.map((post) => (
-                      <PostCard 
-                        key={post.id} 
-                        post={post} 
-                        onRefetch={refetchPosts}
-                      />
-                    ))
+                    <div>
+                      {/* Show processing and failed posts at the top */}
+                      {sortedPosts
+                        .filter(post => post.processingStatus === "processing" || post.processingStatus === "extracting" || post.processingStatus === "analyzing")
+                        .map((post) => (
+                          <PostCard 
+                            key={post.id} 
+                            post={post} 
+                            onRefetch={refetchPosts}
+                          />
+                        ))
+                      }
+                      
+                      {/* Show failed posts next */}
+                      {sortedPosts
+                        .filter(post => post.processingStatus === "failed")
+                        .map((post) => (
+                          <PostCard 
+                            key={post.id} 
+                            post={post} 
+                            onRefetch={refetchPosts}
+                          />
+                        ))
+                      }
+                      
+                      {/* Show completed posts last */}
+                      {sortedPosts
+                        .filter(post => post.processingStatus === "completed")
+                        .map((post) => (
+                          <PostCard 
+                            key={post.id} 
+                            post={post} 
+                            onRefetch={refetchPosts}
+                          />
+                        ))
+                      }
+                    </div>
                   )}
                 </CardContent>
                 

@@ -94,9 +94,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
       {showManualInput ? (
         // Manual content entry form
         <div className="px-4 py-4 sm:px-6 border-b border-gray-200">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-medium text-gray-900">
-              Enter post content manually
+          <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
+            <h3 className="text-md font-semibold text-gray-900">
+              Manual Content Entry
             </h3>
             <Button 
               onClick={() => setShowManualInput(false)} 
@@ -109,9 +109,30 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </Button>
           </div>
           
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+            <h4 className="text-sm font-medium text-blue-800 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Instructions for manual content entry
+            </h4>
+            <p className="mt-1 text-xs text-blue-700">
+              1. Visit the LinkedIn post by clicking "View post on LinkedIn" above<br />
+              2. Copy the author name and post content<br />
+              3. Paste them in the fields below<br />
+              4. Our AI will analyze and categorize the content
+            </p>
+          </div>
+          
           <form onSubmit={handleManualContentSubmit} className="space-y-4">
             <div>
-              <label htmlFor="authorName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="authorName" className="block text-sm font-medium text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
                 Author Name
               </label>
               <Input
@@ -124,18 +145,22 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </div>
             
             <div>
-              <label htmlFor="manualContent" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="manualContent" className="block text-sm font-medium text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
                 Post Content
               </label>
               <Textarea
                 id="manualContent"
                 value={manualContent}
                 onChange={(e) => setManualContent(e.target.value)}
-                placeholder="Enter the LinkedIn post content here"
-                className="mt-1 min-h-[150px]"
+                placeholder="Paste the LinkedIn post content here..."
+                className="mt-1 min-h-[200px]"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Copy and paste the content from the original LinkedIn post
+                Make sure to include the full post content for the most accurate categorization
               </p>
             </div>
             
@@ -233,28 +258,40 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <h3 className="text-sm font-medium text-red-800">Processing failed</h3>
                   <div className="mt-2 text-sm text-red-700">
                     {post.processError?.includes('422') ? (
-                      <p>LinkedIn API extraction failed. This could be due to content protection or API limitations. You can enter the content manually or try a different LinkedIn post.</p>
+                      <p>LinkedIn API extraction failed. This could be due to content protection or API limitations.</p>
                     ) : post.processError?.includes('429') ? (
-                      <p>Rate limit exceeded. You can enter the content manually or wait a moment and try again.</p>
+                      <p>Rate limit exceeded. Please wait a moment and try again.</p>
                     ) : post.processError?.includes('authentication') ? (
-                      <p>This LinkedIn post requires authentication or is private. You can enter the content manually or try a public post instead.</p>
+                      <p>This LinkedIn post requires authentication or is private. Please try a public post instead.</p>
                     ) : post.processError?.includes('URL') ? (
                       <p>The LinkedIn URL format is invalid or not supported. Please check the URL and try again.</p>
                     ) : (
-                      <p>There was an error processing this LinkedIn post: {post.processError || "Unknown error"}. You can try entering the content manually.</p>
+                      <p>There was an error processing this LinkedIn post: {post.processError || "Unknown error"}.</p>
                     )}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
-                        View original post on LinkedIn
-                      </a>
-                      <Button 
-                        onClick={() => setShowManualInput(true)} 
-                        size="sm" 
-                        variant="outline" 
-                        className="text-xs"
-                      >
-                        Enter content manually
-                      </Button>
+                    
+                    <div className="mt-3 p-3 border border-yellow-300 bg-yellow-50 rounded-md">
+                      <h4 className="font-medium text-yellow-800">Solution: Manual Entry Available</h4>
+                      <p className="mt-1 text-sm text-yellow-700">
+                        You can manually enter the content from this LinkedIn post for AI analysis and categorization.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                          </svg>
+                          View post on LinkedIn
+                        </a>
+                        <Button 
+                          onClick={() => setShowManualInput(true)} 
+                          size="sm"
+                          className="text-xs bg-yellow-600 hover:bg-yellow-700 text-white"
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1" />
+                          Enter content manually
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
