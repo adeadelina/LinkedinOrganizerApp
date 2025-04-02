@@ -10,7 +10,7 @@ interface SidebarProps {
   className?: string;
   categories: string[];
   selectedCategories: string[];
-  onCategoryChange: (categories: string[]) => void;
+  onCategoryChange: (category: string) => void;
 }
 
 export function Sidebar({ 
@@ -120,12 +120,7 @@ export function Sidebar({
                   >
                     <Checkbox 
                       checked={selectedCategories.includes(category)}
-                      onCheckedChange={(checked) => {
-    const newCategories = checked 
-      ? [...selectedCategories, category]
-      : selectedCategories.filter(c => c !== category);
-    onCategoryChange(newCategories);
-  }}
+                      onCheckedChange={() => onCategoryChange(category)}
                       className={cn(
                         "h-4 w-4 rounded border-gray-300",
                         selectedCategories.includes(category) 

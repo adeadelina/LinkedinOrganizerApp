@@ -19,9 +19,9 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const { toast } = useToast();
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [sortOrder, setSortOrder] = useState<string>("Most Recent");
-
+  
   // Create form with zod validation
   const form = useForm<{ url: string }>({
     resolver: zodResolver(contentUrlSchema),
@@ -73,7 +73,7 @@ export default function Home() {
     },
     onSuccess: (data) => {
       console.log("Analysis success, data:", data);
-
+      
       // Handle the response
       if (data.exists) {
         toast({
@@ -90,10 +90,10 @@ export default function Home() {
           duration: 5000, // 5 seconds
         });
       }
-
+      
       // Reset the form after showing the toast message
       form.reset();
-
+      
       // Set up multiple refetches to catch status changes
       const refetchIntervals = [2000, 5000, 10000]; // Refetch after 2s, 5s, and 10s
       refetchIntervals.forEach(interval => {
@@ -121,7 +121,7 @@ export default function Home() {
       console.log("Submission blocked: Already analyzing");
       return;
     }
-
+    
     if (!data.url.trim()) {
       console.log("Submission blocked: Empty URL");
       toast({
@@ -131,7 +131,7 @@ export default function Home() {
       });
       return;
     }
-
+    
     // Proceed with analysis
     analyzePost(data.url);
   };
@@ -139,42 +139,42 @@ export default function Home() {
   // Get the most recent post for the "Analyzed content" section
   const getMostRecentPost = () => {
     if (posts.length === 0) return [];
-
+    
     // Filter posts by the selected category if needed
     const eligiblePosts = posts.filter(post => {
       // Skip failed or processing posts
       if (post.processingStatus !== "completed") return false;
-
+      
       // Apply category filter
-      if (selectedCategories.length === 0) return true;
-      return post.categories?.some(cat => selectedCategories.includes(cat));
+      if (selectedCategory === "All Categories") return true;
+      return post.categories?.includes(selectedCategory);
     });
-
+    
     if (eligiblePosts.length === 0) return [];
-
+    
     // Sort filtered posts by createdAt date
     const sortedPosts = [...eligiblePosts].sort((a, b) => {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
-
+    
     // Return only the most recent post
     return [sortedPosts[0]];
   };
-
+  
   // Get the most recent post that respects category filter
   const mostRecentPost = getMostRecentPost();
-
+  
   // Filter posts by category - exclude the most recent post from this list
   const filteredPosts = posts.filter((post) => {
     // Skip the most recent post since it's displayed separately
     if (mostRecentPost.length > 0 && post.id === mostRecentPost[0].id) return false;
-
+    
     // Skip posts that are still processing or failed
     if (post.processingStatus !== "completed") return false;
-
+    
     // Apply category filter
-    if (selectedCategories.length === 0) return true;
-    return post.categories?.some(cat => selectedCategories.includes(cat));
+    if (selectedCategory === "All Categories") return true;
+    return post.categories?.includes(selectedCategory);
   });
 
   // Sort filtered posts (excludes the most recent one)
@@ -191,10 +191,10 @@ export default function Home() {
   // Group posts by category for the categorized view - exclude the most recent post
   const postsByCategory = categories.reduce((acc, category) => {
     // Skip categories that don't match the selected category filter
-    if (selectedCategories.length > 0 && !selectedCategories.includes(category)) {
+    if (selectedCategory !== "All Categories" && category !== selectedCategory) {
       return acc;
     }
-
+    
     const categoryPosts = posts.filter(post => 
       // Skip the most recent post
       (mostRecentPost.length === 0 || post.id !== mostRecentPost[0].id) &&
@@ -213,22 +213,23 @@ export default function Home() {
       <div className="flex-shrink-0">
         <Navbar />
       </div>
-
+      
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <Sidebar 
           categories={categories} 
           onCategoryChange={(category) => {
             // Toggle category selection
-            const updatedSelectedCategories = selectedCategories.includes(category)
-              ? selectedCategories.filter(cat => cat !== category)
-              : [...selectedCategories, category];
-            setSelectedCategories(updatedSelectedCategories);
+            if (selectedCategory === category) {
+              setSelectedCategory("All Categories");
+            } else {
+              setSelectedCategory(category);
+            }
             // Force refetch data to ensure sidebar is consistent
             refetchCategories();
             refetchPosts();
           }} 
-          selectedCategories={selectedCategories}
+          selectedCategories={selectedCategory === "All Categories" ? [] : [selectedCategory]}
         />
 
         {/* Main Content */}
@@ -242,7 +243,7 @@ export default function Home() {
                     <CardTitle className="text-xl">Content Analyzer</CardTitle>
                     <CardDescription>Extract, analyze, and categorize LinkedIn posts and Substack newsletters</CardDescription>
                   </CardHeader>
-
+                  
                   {/* Analyze Content Section */}
                   <CardContent className="border-t border-gray-200 px-6 py-5">
                     <h2 className="text-lg font-medium text-gray-900 mb-4">Analyze Content</h2>
@@ -278,19 +279,15 @@ export default function Home() {
                     </Form>
                   </CardContent>
                 </Card>
-
+                
                 {/* Results Section */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between px-6 py-5">
                     <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
                     <div className="flex space-x-2">
-                      {/* This section needs to be updated to handle multiple selections */}
                       <Select 
-                        value={selectedCategories.length > 0 ? selectedCategories.join(', ') : "All Categories"} 
-                        onValueChange={(value) => {
-                          setSelectedCategories(value === "All Categories" ? [] : value.split(',').map(item => item.trim()))
-                          refetchPosts()
-                        }}
+                        value={selectedCategory} 
+                        onValueChange={setSelectedCategory}
                       >
                         <SelectTrigger className="w-[180px]">
                           <SelectValue placeholder="All Categories" />
@@ -304,7 +301,7 @@ export default function Home() {
                           ))}
                         </SelectContent>
                       </Select>
-
+                      
                       <Select 
                         value={sortOrder} 
                         onValueChange={setSortOrder}
@@ -317,14 +314,14 @@ export default function Home() {
                           <SelectItem value="Oldest First">Oldest First</SelectItem>
                         </SelectContent>
                       </Select>
-
+                      
                       <Button variant="outline" size="sm" className="flex items-center">
                         <Filter className="h-4 w-4 mr-1" />
                         More Filters
                       </Button>
                     </div>
                   </CardHeader>
-
+                  
                   {/* List of analyzed content - only the most recent post */}
                   <CardContent className="px-0">
                     {isLoadingPosts ? (
@@ -346,21 +343,21 @@ export default function Home() {
                       </div>
                     )}
                   </CardContent>
-
+                  
                   {/* Message when filter is active but no categories match */}
-                  {selectedCategories.length > 0 && 
+                  {selectedCategory !== "All Categories" && 
                    mostRecentPost.length === 0 && 
                    Object.keys(postsByCategory).length === 0 && (
                     <CardContent className="border-t border-gray-200 px-6 py-5">
                       <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-center">
                         <h3 className="text-md font-medium text-amber-800 mb-2">No posts match this category</h3>
-                        <p className="text-sm text-amber-700">There are no posts in the selected categories.</p>
+                        <p className="text-sm text-amber-700">There are no posts in the '{selectedCategory}' category.</p>
                         <Button 
                           variant="outline" 
                           size="sm" 
                           className="mt-3"
                           onClick={() => {
-                            setSelectedCategories([]);
+                            setSelectedCategory("All Categories");
                             refetchCategories();
                             refetchPosts();
                           }}
@@ -376,29 +373,26 @@ export default function Home() {
                     <CardContent className="border-t border-gray-200 px-6 py-5">
                       <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-medium text-gray-900">Categories</h2>
-                        {selectedCategories.length > 0 && (
+                        {selectedCategory !== "All Categories" && (
                           <div className="flex items-center">
                             <span className="text-sm text-gray-500 mr-2">Filtered by:</span>
-                            {selectedCategories.map(cat => (
-                              <CategoryFilter 
-                                key={cat}
-                                category={cat} 
-                                isSelected={true}
-                                onClick={() => {
-                                  setSelectedCategories(selectedCategories.filter(c => c !== cat));
-                                  refetchCategories();
-                                  refetchPosts();
-                                }}
-                              />
-                            ))}
+                            <CategoryFilter 
+                              category={selectedCategory} 
+                              isSelected={true}
+                              onClick={() => {
+                                setSelectedCategory("All Categories");
+                                refetchCategories();
+                                refetchPosts();
+                              }}
+                            />
                           </div>
                         )}
                       </div>
-
+                      
                       {Object.entries(postsByCategory).map(([category, categoryPosts]) => (
                         <div key={category} className="mb-8">
                           <h3 className="text-md font-medium text-gray-800 mb-4">{category}</h3>
-
+                          
                           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {categoryPosts.slice(0, 3).map((post) => (
                               <div key={post.id} className="relative rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm">
@@ -427,11 +421,11 @@ export default function Home() {
                                     </div>
                                   </div>
                                 </div>
-
+                                
                                 <div className="mt-2">
                                   <p className="text-sm text-gray-500 line-clamp-3">{post.content}</p>
                                 </div>
-
+                                
                                 <div className="mt-3">
                                   <div className="flex flex-wrap gap-1">
                                     {post.categories?.map((cat) => (
@@ -440,18 +434,15 @@ export default function Home() {
                                         category={cat} 
                                         className="text-xs"
                                         onClick={() => {
-                                          const updatedSelectedCategories = selectedCategories.includes(cat)
-                                            ? selectedCategories.filter(c => c !== cat)
-                                            : [...selectedCategories, cat];
-                                          setSelectedCategories(updatedSelectedCategories);
+                                          setSelectedCategory(cat);
                                           refetchCategories();
                                           refetchPosts();
                                         }}
-                                        isSelected={selectedCategories.includes(cat)}
+                                        isSelected={selectedCategory === cat}
                                       />
                                     ))}
                                   </div>
-
+                                  
                                   <div className="mt-2 flex justify-end">
                                     <Button variant="ghost" size="sm" className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50">
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -467,7 +458,7 @@ export default function Home() {
                           </div>
                         </div>
                       ))}
-
+                      
                       {Object.keys(postsByCategory).length > 0 && (
                         <div className="flex justify-center mt-8">
                           <Button variant="outline" className="flex items-center">
