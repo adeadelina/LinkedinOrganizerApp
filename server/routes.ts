@@ -166,11 +166,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Add each new category to the system
         for (const newCategory of newCategories) {
           if (typeof newCategory === 'string' && newCategory.trim()) {
+            console.log(`Adding new category: "${newCategory.trim()}"`);
             // Add to global categories list
-            await storage.addCategory(newCategory.trim());
+            const updatedCategories = await storage.addCategory(newCategory.trim());
+            console.log(`Global categories after adding "${newCategory.trim()}":`, updatedCategories);
+            
             // Add to the selected categories for this post if not already included
             if (!selectedCategories.includes(newCategory.trim())) {
               selectedCategories.push(newCategory.trim());
+              console.log(`Added "${newCategory.trim()}" to post's selected categories:`, selectedCategories);
             }
           }
         }

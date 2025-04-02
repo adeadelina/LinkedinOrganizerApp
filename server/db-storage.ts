@@ -145,8 +145,11 @@ export class DbStorage implements IStorage {
   }
 
   async addCategory(category: string): Promise<string[]> {
-    // Since we're using a predefined array for now, this is a no-op
-    // In the future, we would insert into a categories table
+    // Add the category to the list if it doesn't exist already
+    if (!defaultCategories.includes(category)) {
+      defaultCategories.push(category);
+      console.log(`New category "${category}" added. Updated categories:`, defaultCategories);
+    }
     return defaultCategories;
   }
 }
