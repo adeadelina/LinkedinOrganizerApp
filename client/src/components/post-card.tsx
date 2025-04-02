@@ -179,7 +179,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   };
 
   return (
-    <div className="border-t border-gray-200">
+    <div 
+      className="border-t border-gray-200 cursor-pointer hover:bg-gray-50 transition-all duration-200 hover:shadow-sm relative"
+      onClick={() => setIsContentDialogOpen(true)}
+    >
       <div className="px-4 py-4 sm:px-6 border-b border-gray-200">
         <div className="flex items-center mb-4">
           <div className="flex-shrink-0">
@@ -205,6 +208,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   {getTimeElapsed(post.createdAt)}
                 </p>
               </div>
+              <span className="text-xs text-blue-600 flex items-center">
+                <Search className="h-3 w-3 mr-1" />
+                Click to view
+              </span>
             </div>
           </div>
         </div>
@@ -274,10 +281,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </div>
           </div>
         ) : (
-          <div 
-            className="mt-1 text-sm text-gray-700 space-y-2 cursor-pointer"
-            onClick={() => setIsContentDialogOpen(true)}
-          >
+          <div className="mt-1 text-sm text-gray-700 space-y-2">
             {post.content?.split('\n').map((paragraph, i) => (
               paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
             )).slice(0, expanded ? undefined : 5)}
@@ -305,13 +309,6 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                 Show less
               </button>
             )}
-            
-            <div className="text-center mt-2">
-              <span className="text-xs text-gray-500 inline-flex items-center">
-                <Search className="h-3 w-3 mr-1" />
-                Click to view full content
-              </span>
-            </div>
           </div>
         )}
         
@@ -328,7 +325,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                         variant="ghost" 
                         size="icon" 
                         className="h-5 w-5" 
-                        onClick={() => setIsCategoryDialogOpen(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsCategoryDialogOpen(true);
+                        }}
                       >
                         <Edit2 className="h-3.5 w-3.5 text-blue-600" />
                       </Button>
@@ -346,7 +346,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   variant="outline" 
                   size="sm" 
                   className="text-xs"
-                  onClick={() => setIsCategoryDialogOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCategoryDialogOpen(true);
+                  }}
                 >
                   <Edit2 className="h-3.5 w-3.5 mr-1" />
                   Edit Categories
@@ -357,6 +360,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Button 
                     variant="ghost" 
@@ -392,6 +396,64 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </div>
           </div>
         )}
+        
+        {/* Full Content Dialog */}
+        <Dialog open={isContentDialogOpen} onOpenChange={setIsContentDialogOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                <div className="flex items-center gap-3">
+                  {post.authorImage ? (
+                    <img 
+                      src={post.authorImage} 
+                      alt={`${post.authorName || 'User'}'s profile`} 
+                      className="h-8 w-8 rounded-full"
+                    />
+                  ) : (
+                    <span className="inline-block h-8 w-8 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                      {post.authorName?.[0] || "U"}
+                    </span>
+                  )}
+                  <div>
+                    <div className="text-md font-medium">{post.authorName || "Content Author"}</div>
+                    <div className="text-xs text-gray-500">{getTimeElapsed(post.createdAt)}</div>
+                  </div>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="mt-2 text-sm space-y-4">
+              {post.content?.split('\n').map((paragraph, i) => (
+                paragraph ? <p key={i} className="text-gray-700">{paragraph}</p> : <br key={i} />
+              ))}
+            </div>
+            
+            <div className="flex items-center gap-4 mt-6 pt-4 border-t">
+              <a 
+                href={post.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center text-blue-600 hover:text-blue-800 text-sm"
+              >
+                <ExternalLink className="h-4 w-4 mr-1" />
+                View original post
+              </a>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCategoryDialogOpen(true);
+                }}
+                className="ml-auto"
+              >
+                <Edit2 className="h-3.5 w-3.5 mr-1" />
+                Edit Categories
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
         
         {/* Category Edit Dialog */}
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
