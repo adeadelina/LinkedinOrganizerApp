@@ -131,13 +131,33 @@ export default function Home() {
     analyzePost(data.url);
   };
 
-  // Filter posts by category
+  // Get the most recent post for the "Analyzed content" section
+  const getMostRecentPost = () => {
+    if (posts.length === 0) return [];
+    
+    // Sort all posts by createdAt date
+    const sortedAllPosts = [...posts].sort((a, b) => {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+    
+    // Return only the most recent post
+    return [sortedAllPosts[0]];
+  };
+  
+  // Get the most recent post
+  const mostRecentPost = getMostRecentPost();
+  
+  // Filter posts by category - exclude the most recent post from this list
   const filteredPosts = posts.filter((post) => {
+    // Skip the most recent post since it's displayed separately
+    if (mostRecentPost.length > 0 && post.id === mostRecentPost[0].id) return false;
+    
+    // Apply category filter
     if (selectedCategory === "All Categories") return true;
     return post.categories?.includes(selectedCategory);
   });
 
-  // Sort posts
+  // Sort filtered posts (excludes the most recent one)
   const sortedPosts = [...filteredPosts].sort((a, b) => {
     if (sortOrder === "Most Recent") {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
@@ -148,9 +168,12 @@ export default function Home() {
     return 0;
   });
 
-  // Group posts by category for the categorized view
+  // Group posts by category for the categorized view - exclude the most recent post
   const postsByCategory = categories.reduce((acc, category) => {
     const categoryPosts = posts.filter(post => 
+      // Skip the most recent post
+      (mostRecentPost.length === 0 || post.id !== mostRecentPost[0].id) &&
+      // Include only completed posts with this category
       post.categories?.includes(category) && post.processingStatus === "completed"
     );
     if (categoryPosts.length > 0) {
@@ -258,18 +281,18 @@ export default function Home() {
                   </div>
                 </CardHeader>
                 
-                {/* List of analyzed content */}
+                {/* List of analyzed content - only the most recent post */}
                 <CardContent className="px-0">
                   {isLoadingPosts ? (
                     <div className="p-6 text-center">Loading content...</div>
-                  ) : sortedPosts.length === 0 ? (
+                  ) : mostRecentPost.length === 0 ? (
                     <div className="p-6 text-center text-gray-500">
                       No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
                     </div>
                   ) : (
                     <div>
-                      {/* Display all posts with their status */}
-                      {sortedPosts.map((post) => (
+                      {/* Display only the most recent post */}
+                      {mostRecentPost.map((post) => (
                         <PostCard 
                           key={post.id} 
                           post={post} 
