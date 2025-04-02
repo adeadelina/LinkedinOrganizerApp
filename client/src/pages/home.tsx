@@ -140,16 +140,28 @@ export default function Home() {
   const getMostRecentPost = () => {
     if (posts.length === 0) return [];
     
-    // Sort all posts by createdAt date
-    const sortedAllPosts = [...posts].sort((a, b) => {
+    // Filter posts by the selected category if needed
+    const eligiblePosts = posts.filter(post => {
+      // Skip failed or processing posts
+      if (post.processingStatus !== "completed") return false;
+      
+      // Apply category filter
+      if (selectedCategory === "All Categories") return true;
+      return post.categories?.includes(selectedCategory);
+    });
+    
+    if (eligiblePosts.length === 0) return [];
+    
+    // Sort filtered posts by createdAt date
+    const sortedPosts = [...eligiblePosts].sort((a, b) => {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
     
     // Return only the most recent post
-    return [sortedAllPosts[0]];
+    return [sortedPosts[0]];
   };
   
-  // Get the most recent post
+  // Get the most recent post that respects category filter
   const mostRecentPost = getMostRecentPost();
   
   // Filter posts by category - exclude the most recent post from this list
@@ -333,7 +345,9 @@ export default function Home() {
                   </CardContent>
                   
                   {/* Message when filter is active but no categories match */}
-                  {selectedCategory !== "All Categories" && Object.keys(postsByCategory).length === 0 && (
+                  {selectedCategory !== "All Categories" && 
+                   mostRecentPost.length === 0 && 
+                   Object.keys(postsByCategory).length === 0 && (
                     <CardContent className="border-t border-gray-200 px-6 py-5">
                       <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-center">
                         <h3 className="text-md font-medium text-amber-800 mb-2">No posts match this category</h3>
