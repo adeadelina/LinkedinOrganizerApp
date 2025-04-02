@@ -222,7 +222,13 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
     } else if (error.message?.includes('API003')) {
       throw new Error('Usage limit reached for ZenRows API. Please upgrade your plan or try again later.');
     } else if (error.message?.includes('RESP001') || error.message?.includes('protected') || error.message?.includes('authentication')) {
-      throw new Error('The LinkedIn post content is protected or requires authentication. Try a different public post.');
+      throw new Error(
+        'The LinkedIn post content is protected or requires authentication. ' +
+        'Try a different public post. Based on ZenRows documentation, this error occurs when the content ' +
+        'extraction fails, which could be due to: (1) The content is not publicly accessible, ' +
+        '(2) LinkedIn requires authentication to view this post, or ' +
+        '(3) The post URL format has changed or LinkedIn has updated their site structure.'
+      );
     } else if (error.message?.includes('RESP002')) {
       throw new Error('The LinkedIn page took too long to load. The network might be slow or the page is too complex.');
     } else if (error.message?.includes('RESP003')) {

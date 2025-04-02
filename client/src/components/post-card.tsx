@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { CategoryFilter } from "@/components/category-filter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Eye } from "lucide-react";
+import { Check, Edit, Eye, Loader2, X } from "lucide-react";
 import type { Post } from "@shared/schema";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 interface PostCardProps {
   post: Post;
@@ -15,9 +18,37 @@ interface PostCardProps {
 export function PostCard({ post, onRefetch }: PostCardProps) {
   const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualContent, setManualContent] = useState("");
+  const [authorName, setAuthorName] = useState(post.authorName || "");
   
   const isProcessing = post.processingStatus === "processing";
   const isFailed = post.processingStatus === "failed";
+  
+  // Mutation for manual content submission
+  const manualContentMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/posts/${post.id}/manual-content`, { 
+        content: manualContent, 
+        authorName 
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Content updated",
+        description: "Your manual content has been processed successfully.",
+      });
+      setShowManualInput(false);
+      if (onRefetch) onRefetch();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating content",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  });
   
   // Format the time elapsed since post was created
   const getTimeElapsed = (date?: Date | string | null) => {
@@ -41,6 +72,20 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   // Toggle expand/collapse of post content
   const toggleExpand = () => {
     setExpanded(!expanded);
+  };
+  
+  // Handle manual content submission
+  const handleManualContentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualContent.trim().length === 0) {
+      toast({
+        title: "Error",
+        description: "Please enter some content before submitting",
+        variant: "destructive",
+      });
+      return;
+    }
+    manualContentMutation.mutate();
   };
 
   return (

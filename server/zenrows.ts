@@ -9,22 +9,54 @@ const ZENROWS_URL = 'https://api.zenrows.com/v1/';
  * @returns Transformed URL for better scraping
  */
 function transformLinkedInUrl(url: string): string {
+  console.log(`Transforming LinkedIn URL: ${url}`);
+  
   // Process feed URLs to a more stable format
   if (url.includes('/feed/update/')) {
-    // Extract the activity ID
-    const activityMatch = url.match(/urn:li:activity:(\d+)/);
+    // Extract the activity ID - try multiple patterns
+    let activityMatch = url.match(/urn:li:activity:(\d+)/);
+    
     if (activityMatch && activityMatch[1]) {
       const activityId = activityMatch[1];
+      console.log(`Extracted activity ID from feed URL: ${activityId}`);
       // Use the post URL format which is more stable for scraping
-      return `https://www.linkedin.com/posts/${activityId}`;
+      return `https://www.linkedin.com/posts/activity-${activityId}`;
+    }
+    
+    // Try another pattern for activity
+    activityMatch = url.match(/\/feed\/update\/(\d+)/);
+    if (activityMatch && activityMatch[1]) {
+      const activityId = activityMatch[1];
+      console.log(`Extracted numeric ID from feed URL: ${activityId}`);
+      return `https://www.linkedin.com/feed/update/${activityId}`;
     }
   }
   
-  // Remove tracking parameters and query strings
-  if (url.includes('?')) {
-    url = url.split('?')[0];
+  // If it's already a /posts/ URL, keep it but clean it
+  if (url.includes('/posts/')) {
+    // Keep the URL structure but remove tracking parameters
+    if (url.includes('?')) {
+      url = url.split('?')[0];
+      console.log(`Cleaned posts URL to: ${url}`);
+    }
+    return url;
   }
   
+  // If it contains activity but not in the right format
+  const activityMatch = url.match(/activity[:\-](\d+)/i);
+  if (activityMatch && activityMatch[1]) {
+    const activityId = activityMatch[1];
+    console.log(`Extracted activity ID from URL: ${activityId}`);
+    return `https://www.linkedin.com/posts/activity-${activityId}`;
+  }
+  
+  // Remove tracking parameters and query strings if not handled by above cases
+  if (url.includes('?')) {
+    url = url.split('?')[0];
+    console.log(`Removed query parameters, resulting URL: ${url}`);
+  }
+  
+  console.log(`Using transformed URL: ${url}`);
   return url;
 }
 
@@ -45,12 +77,16 @@ export async function scrapeLinkedInPost(url: string): Promise<{
     console.log(`Scraping LinkedIn post from transformed URL: ${transformedUrl}`);
     
     // Configure the request parameters for ZenRows
+    // Trying a combination of parameters that should work based on ZenRows documentation
     const params = {
       url: transformedUrl,
       apikey: API_KEY,
-      js_render: 'true',
-      premium_proxy: 'true',
-      wait_for: '5000' // Wait 5 seconds for JS rendering to complete
+      js_render: 'true',        // Enable JavaScript rendering for dynamic content
+      premium_proxy: 'true',    // Use premium proxies for better success rates
+      wait_for: '5000',         // Wait time in ms (reduced from 10000 to prevent timeouts)
+      response_type: 'plaintext', // Get plaintext to simplify parsing
+      retry: '3',               // Add retry parameter to improve success rate
+      autoparse: 'true'         // Enable automatic parsing to extract more content
     };
 
     // Make the request to ZenRows API
@@ -62,14 +98,64 @@ export async function scrapeLinkedInPost(url: string): Promise<{
       throw new Error('No data returned from ZenRows API');
     }
     
-    const html = response.data;
-    console.log(`Received HTML response of length: ${html.length}`);
+    // The response could be plaintext or HTML depending on the response_type parameter
+    const responseData = response.data;
+    console.log(`Received response of length: ${typeof responseData === 'string' ? responseData.length : JSON.stringify(responseData).length}`);
     
-    // For debugging purposes in development, save a sample of the HTML
+    // For debugging purposes in development, save a sample of the response
     if (process.env.NODE_ENV !== 'production') {
-      const sampleHtml = html.substring(0, 500) + '... [truncated]';
-      console.log('Sample HTML:', sampleHtml);
+      const sampleText = typeof responseData === 'string' 
+        ? responseData.substring(0, 500) + '... [truncated]'
+        : JSON.stringify(responseData).substring(0, 500) + '... [truncated]';
+      console.log('Sample response:', sampleText);
     }
+    
+    // Handle plaintext response (when response_type = 'plaintext')
+    if (typeof responseData === 'string' && !responseData.includes('<')) {
+      // It's a plaintext response
+      console.log('Processing plaintext response from ZenRows');
+      
+      // For plaintext responses, we'll have to extract information based on patterns
+      // Common format for LinkedIn posts in plaintext might be:
+      // Author Name
+      // Title/Role (optional)
+      // Content
+      // Timestamp (sometimes)
+      
+      const lines = responseData.split('\n').filter(line => line.trim().length > 0);
+      
+      if (lines.length === 0) {
+        throw new Error('No content found in plaintext response');
+      }
+      
+      // Assume the first line might be the author name
+      const authorName = lines[0].trim() || 'LinkedIn User';
+      
+      // Skip title/role line if it exists (typically shorter and doesn't look like content)
+      let contentStartIndex = 1;
+      if (lines.length > 1 && lines[1].length < 50 && !lines[1].includes('.')) {
+        contentStartIndex = 2;
+      }
+      
+      // Join the remaining lines as content
+      const content = lines.slice(contentStartIndex).join('\n').trim() || 'No content available';
+      
+      // We don't have image or date in plaintext, so use defaults
+      const authorImage = '';
+      const publishedDate = new Date();
+      
+      console.log(`Extracted from plaintext: Author: "${authorName}", Content length: ${content.length}`);
+      
+      return {
+        authorName,
+        authorImage,
+        content,
+        publishedDate
+      };
+    }
+    
+    // If we reach here, it's HTML response
+    const html = responseData;
     
     // Extract information from the HTML response
     const authorName = extractAuthorName(html) || 'LinkedIn User';
@@ -123,50 +209,116 @@ export async function scrapeLinkedInPost(url: string): Promise<{
  */
 function extractAuthorName(html: string): string | null {
   try {
-    // Try different patterns for LinkedIn author names
+    console.log(`Attempting to extract author name from HTML`);
     
-    // First attempt - common actor name pattern
-    const actorRegex = /<span[^>]*class="[^"]*actor-name[^"]*"[^>]*>([\s\S]*?)<\/span>/i;
-    let match = html.match(actorRegex);
+    // First attempt - 2023-2024 LinkedIn patterns with author class
+    const newAuthorRegex = /<(?:span|div|a)[^>]*(?:class|data-test-id)[^>]*(?:actor-name|author-name|profile-name|display-name)[^>]*>([\s\S]*?)<\/(?:span|div|a)>/i;
+    let match = html.match(newAuthorRegex);
     
     if (match && match[1]) {
-      return match[1].replace(/<[^>]+>/g, '').trim();
+      const name = match[1].replace(/<[^>]+>/g, '').trim();
+      if (name.length > 2 && name.length < 50) {
+        console.log(`Extracted author using new pattern: "${name}"`);
+        return name;
+      }
     }
     
-    // Second attempt - profile links
+    // Second attempt - common actor name pattern (traditional)
+    const actorRegex = /<span[^>]*class="[^"]*actor-name[^"]*"[^>]*>([\s\S]*?)<\/span>/i;
+    match = html.match(actorRegex);
+    
+    if (match && match[1]) {
+      const name = match[1].replace(/<[^>]+>/g, '').trim();
+      if (name.length > 2) {
+        console.log(`Extracted author using actor pattern: "${name}"`);
+        return name;
+      }
+    }
+    
+    // Third attempt - profile links (most reliable for public posts)
     const profileRegex = /<a[^>]*href="[^"]*\/in\/[^"]*"[^>]*>([\s\S]*?)<\/a>/i;
     match = html.match(profileRegex);
     
     if (match && match[1]) {
-      return match[1].replace(/<[^>]+>/g, '').trim();
+      const name = match[1].replace(/<[^>]+>/g, '').trim();
+      if (name.length > 2 && name.length < 50) {
+        console.log(`Extracted author from profile link: "${name}"`);
+        return name;
+      }
     }
     
-    // Third attempt - name in title
-    const titleRegex = /<title[^>]*>([\s\S]*?)\s+on\s+LinkedIn:[\s\S]*?<\/title>/i;
+    // Fourth attempt - name in title (common in single post views)
+    const titleRegex = /<title[^>]*>([^|:]+)(?:\s+on\s+LinkedIn:?|\s+\|[^|]+LinkedIn)[\s\S]*?<\/title>/i;
     match = html.match(titleRegex);
     
     if (match && match[1]) {
-      return match[1].trim();
+      const name = match[1].trim();
+      if (name.length > 2 && name.length < 50 && !name.toLowerCase().includes('linkedin')) {
+        console.log(`Extracted author from title: "${name}"`);
+        return name;
+      }
     }
     
-    // Fourth attempt - author span
-    const authorRegex = /<span[^>]*>([\s\S]*?)<\/span>/gi;
-    let authorFound = null;
+    // Fifth attempt - header section with name
+    const headerRegex = /<header[^>]*>([\s\S]*?)<\/header>/gi;
+    let headers = [];
     let m;
     
-    while (!authorFound && (m = authorRegex.exec(html)) !== null) {
-      if (m[1] && m[1].length > 0 && m[1].length < 40) { // Likely a name (not too long)
-        const cleaned = m[1].replace(/<[^>]+>/g, '').trim();
-        if (cleaned && cleaned.length > 2 && cleaned.includes(' ')) { // Probably a full name
-          authorFound = cleaned;
+    while ((m = headerRegex.exec(html)) !== null) {
+      if (m[1]) {
+        // Extract text content from header
+        const headerText = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (headerText.length > 0 && headerText.length < 100) {
+          headers.push(headerText);
         }
       }
     }
     
-    if (authorFound) {
-      return authorFound;
+    // Find the header most likely to contain a name (shorter, with spaces)
+    headers = headers
+      .filter(h => h.includes(' ') && h.length > 5 && h.length < 50)
+      .sort((a, b) => a.length - b.length); // Sort by length, shortest first
+      
+    if (headers.length > 0) {
+      console.log(`Extracted author from header: "${headers[0]}"`);
+      return headers[0];
     }
     
+    // Sixth attempt - find meta name tags
+    const metaNameRegex = /<meta[^>]*name="author"[^>]*content="([^"]+)"[^>]*>/i;
+    match = html.match(metaNameRegex);
+    
+    if (match && match[1]) {
+      const name = match[1].trim();
+      if (name.length > 2) {
+        console.log(`Extracted author from meta tag: "${name}"`);
+        return name;
+      }
+    }
+    
+    // Last attempt - look for potential name spans near the top
+    const topHtml = html.substring(0, Math.min(html.length, 15000)); // Look in first 15K chars only
+    const nameSpanRegex = /<(?:span|div|p)[^>]*>([\s\S]*?)<\/(?:span|div|p)>/gi;
+    const potentialNames = [];
+    
+    while ((m = nameSpanRegex.exec(topHtml)) !== null) {
+      if (m[1]) {
+        const text = m[1].replace(/<[^>]+>/g, '').trim();
+        // Check if it looks like a name (2-3 words, proper length, capital first letters)
+        if (text && text.length > 2 && text.length < 40 && 
+            text.includes(' ') && 
+            /^[A-Z][a-z]+(\s+[A-Z][a-z]+){1,2}$/.test(text)) {
+          potentialNames.push(text);
+        }
+      }
+    }
+    
+    if (potentialNames.length > 0) {
+      console.log(`Extracted potential author from content: "${potentialNames[0]}"`);
+      return potentialNames[0];
+    }
+    
+    console.log('No author name found, using default');
     return 'LinkedIn User';
   } catch (error) {
     console.error('Error extracting author name:', error);
@@ -179,48 +331,88 @@ function extractAuthorName(html: string): string | null {
  */
 function extractAuthorImage(html: string): string | null {
   try {
-    // Multiple patterns to extract LinkedIn profile images
+    console.log(`Attempting to extract author image from HTML`);
     
-    // First attempt - profile images with class
-    const profileRegex = /<img[^>]*class="[^"]*profile[^"]*"[^>]*src="([^"]+)"[^>]*>/i;
-    let match = html.match(profileRegex);
+    // First attempt - 2023-2024 specific profile patterns
+    const newProfileRegex = /<img[^>]*(?:class|data-test-id)[^>]*(?:profile-image|user-image|avatar-image|actor-image)[^>]*src="([^"]+)"[^>]*>/i;
+    let match = html.match(newProfileRegex);
     
     if (match && match[1]) {
+      console.log(`Found profile image using new pattern: ${match[1].substring(0, 50)}...`);
       return match[1];
     }
     
-    // Second attempt - avatar images
-    const avatarRegex = /<img[^>]*class="[^"]*avatar[^"]*"[^>]*src="([^"]+)"[^>]*>/i;
-    match = html.match(avatarRegex);
+    // Second attempt - profile images with explicit class
+    const profileRegex = /<img[^>]*class="[^"]*(?:profile|avatar)[^"]*"[^>]*src="([^"]+)"[^>]*>/i;
+    match = html.match(profileRegex);
     
     if (match && match[1]) {
+      console.log(`Found profile image using class pattern: ${match[1].substring(0, 50)}...`);
       return match[1];
     }
     
-    // Third attempt - images with person in alt text
-    const altRegex = /<img[^>]*alt="[^"]*photo[^"]*"[^>]*src="([^"]+)"[^>]*>/i;
+    // Third attempt - profile picture in meta tags
+    const metaImageRegex = /<meta[^>]*property="og:image"[^>]*content="([^"]+)"[^>]*>/i;
+    match = html.match(metaImageRegex);
+    
+    if (match && match[1]) {
+      console.log(`Found profile image in meta tag: ${match[1].substring(0, 50)}...`);
+      return match[1];
+    }
+    
+    // Fourth attempt - images with specific alt text patterns
+    const altRegex = /<img[^>]*alt="[^"]*(?:profile|photo|picture|avatar|headshot)[^"]*"[^>]*src="([^"]+)"[^>]*>/i;
     match = html.match(altRegex);
     
     if (match && match[1]) {
+      console.log(`Found profile image with alt text: ${match[1].substring(0, 50)}...`);
       return match[1];
     }
     
-    // Fourth attempt - any small image that might be a profile pic
+    // Fifth attempt - style background images
+    const bgImageRegex = /background-image:\s*url\(['"](https:\/\/[^'"]+)['"]\)/i;
+    match = html.match(bgImageRegex);
+    
+    if (match && match[1]) {
+      console.log(`Found background image: ${match[1].substring(0, 50)}...`);
+      return match[1];
+    }
+    
+    // Last attempt - any image that appears to be a profile picture
     const imageRegex = /<img[^>]*src="([^"]+)"[^>]*>/gi;
     let m;
-    let potentialProfileImage = null;
+    const potentialImages = [];
     
-    while (!potentialProfileImage && (m = imageRegex.exec(html)) !== null) {
-      if (m[1] && 
-          (m[1].includes('profile') || m[1].includes('avatar') || m[1].includes('user'))) {
-        potentialProfileImage = m[1];
+    while ((m = imageRegex.exec(html)) !== null) {
+      // Filter and score potential profile images
+      if (m[1] && typeof m[1] === 'string') {
+        let score = 0;
+        const url = m[1].toLowerCase();
+        
+        // Score based on URL keywords
+        if (url.includes('profile')) score += 5;
+        if (url.includes('avatar')) score += 4;
+        if (url.includes('user')) score += 3;
+        if (url.includes('photo')) score += 2;
+        if (url.includes('headshot')) score += 4;
+        if (url.includes('linkedin.com/media')) score += 3;
+        if (url.includes('licdn.com')) score += 2;
+        
+        // Add to potential images if score is high enough
+        if (score > 0) {
+          potentialImages.push({ url: m[1], score });
+        }
       }
     }
     
-    if (potentialProfileImage) {
-      return potentialProfileImage;
+    // If we found potential profile images, return the highest scored one
+    if (potentialImages.length > 0) {
+      potentialImages.sort((a, b) => b.score - a.score);
+      console.log(`Found potential profile image with score ${potentialImages[0].score}: ${potentialImages[0].url.substring(0, 50)}...`);
+      return potentialImages[0].url;
     }
     
+    console.log('No profile image found');
     return '';
   } catch (error) {
     console.error('Error extracting author image:', error);
@@ -233,61 +425,150 @@ function extractAuthorImage(html: string): string | null {
  */
 function extractPostContent(html: string): string | null {
   try {
-    // For LinkedIn feed posts
-    // First attempt with common LinkedIn post content pattern
-    const feedRegex = /<div[^>]*class="[^"]*feed-shared-update-v2__description[^"]*"[^>]*>([\s\S]*?)<\/div>/i;
-    let match = html.match(feedRegex);
+    console.log(`Attempting to extract post content from HTML of length: ${html.length}`);
+    
+    // First attempt - 2023-2024 LinkedIn feed post pattern
+    const newFeedRegex = /<div[^>]*(?:class|data-test-id)[^>]*(?:feed-shared-update|update-content|post-content)[^>]*>([\s\S]*?)<\/div>/i;
+    let match = html.match(newFeedRegex);
     
     if (match && match[1]) {
-      return match[1]
+      const content = match[1]
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<[^>]+>/g, '')
         .trim();
+      
+      if (content.length > 20) {
+        console.log(`Extracted content using new feed pattern (${content.length} chars)`);
+        return content;
+      }
     }
     
-    // Second attempt with more general content pattern
+    // Second attempt - traditional LinkedIn feed pattern
+    const feedRegex = /<div[^>]*class="[^"]*feed-shared-update-v2__description[^"]*"[^>]*>([\s\S]*?)<\/div>/i;
+    match = html.match(feedRegex);
+    
+    if (match && match[1]) {
+      const content = match[1]
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .trim();
+      
+      if (content.length > 20) {
+        console.log(`Extracted content using feed pattern (${content.length} chars)`);
+        return content;
+      }
+    }
+    
+    // Third attempt - span based structures common in modern LinkedIn
+    const spanContentRegex = /<span[^>]*class="[^"]*(?:break-words|content|text-content)[^"]*"[^>]*>([\s\S]*?)<\/span>/i;
+    match = html.match(spanContentRegex);
+    
+    if (match && match[1]) {
+      const content = match[1]
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .trim();
+      
+      if (content.length > 20) {
+        console.log(`Extracted content using span pattern (${content.length} chars)`);
+        return content;
+      }
+    }
+    
+    // Fourth attempt - article-style content with general break-words
     const contentRegex = /<div[^>]*class="[^"]*break-words[^"]*"[^>]*>([\s\S]*?)<\/div>/i;
     match = html.match(contentRegex);
     
     if (match && match[1]) {
-      return match[1]
+      const content = match[1]
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<[^>]+>/g, '')
         .trim();
-    }
-    
-    // For articles or post bodies
-    const bodyRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
-    const paragraphs = [];
-    let m;
-    
-    while ((m = bodyRegex.exec(html)) !== null) {
-      if (m[1]) {
-        paragraphs.push(m[1].replace(/<[^>]+>/g, '').trim());
+      
+      if (content.length > 20) {
+        console.log(`Extracted content using break-words pattern (${content.length} chars)`);
+        return content;
       }
     }
     
-    if (paragraphs.length > 0) {
-      return paragraphs.join('\n\n');
-    }
+    // Fifth attempt - article content with specific data attributes
+    const articleRegex = /<article[^>]*>([\s\S]*?)<\/article>/gi;
+    const articles = [];
+    let m;
     
-    // Last attempt - just grab any content between paragraph tags
-    const fallbackRegex = /<div[^>]*>([\s\S]*?)<\/div>/gi;
-    let fullText = '';
-    
-    while ((m = fallbackRegex.exec(html)) !== null) {
-      if (m[1] && m[1].length > 50) { // Only consider substantial content
-        const cleaned = m[1].replace(/<[^>]+>/g, '').trim();
-        if (cleaned && cleaned.length > 50) {
-          fullText += cleaned + '\n\n';
+    while ((m = articleRegex.exec(html)) !== null) {
+      if (m[1]) {
+        const content = m[1]
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<[^>]+>/g, '')
+          .trim();
+        
+        if (content.length > 100) { // Substantial article content
+          articles.push(content);
         }
       }
     }
     
-    if (fullText) {
-      return fullText.trim();
+    if (articles.length > 0) {
+      // Get the longest article content
+      const content = articles.sort((a, b) => b.length - a.length)[0];
+      console.log(`Extracted content from article tag (${content.length} chars)`);
+      return content;
     }
     
+    // Sixth attempt - paragraphs collection for article-like content
+    const bodyRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+    const paragraphs = [];
+    
+    while ((m = bodyRegex.exec(html)) !== null) {
+      if (m[1]) {
+        const paraContent = m[1].replace(/<[^>]+>/g, '').trim();
+        if (paraContent.length > 15) { // Only add substantial paragraphs
+          paragraphs.push(paraContent);
+        }
+      }
+    }
+    
+    if (paragraphs.length > 0) {
+      const content = paragraphs.join('\n\n');
+      console.log(`Extracted content from paragraphs (${content.length} chars)`);
+      return content;
+    }
+    
+    // Last attempt - find the largest text blocks in div elements
+    const fallbackRegex = /<div[^>]*>([\s\S]*?)<\/div>/gi;
+    const textBlocks = [];
+    
+    while ((m = fallbackRegex.exec(html)) !== null) {
+      if (m[1]) {
+        const cleaned = m[1].replace(/<[^>]+>/g, '').trim();
+        if (cleaned.length > 100) { // Only substantial blocks
+          textBlocks.push(cleaned);
+        }
+      }
+    }
+    
+    if (textBlocks.length > 0) {
+      // Sort by length (descending) and take longest blocks that likely represent the post content
+      textBlocks.sort((a, b) => b.length - a.length);
+      const content = textBlocks.slice(0, 3).join('\n\n'); // Take top 3 substantial blocks
+      console.log(`Extracted content using fallback (${content.length} chars)`);
+      return content;
+    }
+    
+    // If all else fails, look for title text
+    const titleRegex = /<title[^>]*>([\s\S]*?)<\/title>/i;
+    match = html.match(titleRegex);
+    
+    if (match && match[1]) {
+      const titleText = match[1].replace(/\s*\|\s*LinkedIn$/, '').trim();
+      if (titleText.length > 30) {
+        console.log(`Only found title text (${titleText.length} chars)`);
+        return `[Post title] ${titleText}`;
+      }
+    }
+    
+    console.log('No suitable content found in HTML');
     return null;
   } catch (error) {
     console.error('Error extracting post content:', error);
@@ -300,15 +581,45 @@ function extractPostContent(html: string): string | null {
  */
 function extractPublishedDate(html: string): Date | null {
   try {
-    // First attempt - time element with datetime attribute
-    const timeRegex = /<time[^>]*datetime="([^"]+)"[^>]*>/i;
-    let match = html.match(timeRegex);
+    console.log(`Attempting to extract published date from HTML`);
+    
+    // First attempt - meta tags with publication date (most accurate)
+    const metaDateRegex = /<meta[^>]*(?:property="(?:article:published_time|og:published_time)"|name="(?:published_time|publication-date)")\s+content="([^"]+)"[^>]*>/i;
+    let match = html.match(metaDateRegex);
     
     if (match && match[1]) {
-      return new Date(match[1]);
+      const date = new Date(match[1]);
+      if (!isNaN(date.getTime())) {
+        console.log(`Found date in meta tag: ${date.toISOString()}`);
+        return date;
+      }
     }
     
-    // Second attempt - looking for relative time indicators
+    // Second attempt - time element with datetime attribute (common in LinkedIn)
+    const timeRegex = /<time[^>]*datetime="([^"]+)"[^>]*>/i;
+    match = html.match(timeRegex);
+    
+    if (match && match[1]) {
+      const date = new Date(match[1]);
+      if (!isNaN(date.getTime())) {
+        console.log(`Found date in time element: ${date.toISOString()}`);
+        return date;
+      }
+    }
+    
+    // Third attempt - published attribute in HTML
+    const publishedAttrRegex = /\bpublished(?:At|Date|On)=["']([^"']+)["']/i;
+    match = html.match(publishedAttrRegex);
+    
+    if (match && match[1]) {
+      const date = new Date(match[1]);
+      if (!isNaN(date.getTime())) {
+        console.log(`Found date in published attribute: ${date.toISOString()}`);
+        return date;
+      }
+    }
+    
+    // Fourth attempt - relative time indicators with precise units (hours, days, etc.)
     const relativeRegex = /(\d+)\s+(second|minute|hour|day|week|month|year)s?\s+ago/i;
     match = html.match(relativeRegex);
     
@@ -317,29 +628,42 @@ function extractPublishedDate(html: string): Date | null {
       const unit = match[2].toLowerCase();
       
       const now = new Date();
+      let date;
       
       switch (unit) {
         case 'second':
-          return new Date(now.getTime() - amount * 1000);
+          date = new Date(now.getTime() - amount * 1000);
+          break;
         case 'minute':
-          return new Date(now.getTime() - amount * 60 * 1000);
+          date = new Date(now.getTime() - amount * 60 * 1000);
+          break;
         case 'hour':
-          return new Date(now.getTime() - amount * 60 * 60 * 1000);
+          date = new Date(now.getTime() - amount * 60 * 60 * 1000);
+          break;
         case 'day':
-          return new Date(now.getTime() - amount * 24 * 60 * 60 * 1000);
+          date = new Date(now.getTime() - amount * 24 * 60 * 60 * 1000);
+          break;
         case 'week':
-          return new Date(now.getTime() - amount * 7 * 24 * 60 * 60 * 1000);
+          date = new Date(now.getTime() - amount * 7 * 24 * 60 * 60 * 1000);
+          break;
         case 'month':
           // Approximate month as 30 days
-          return new Date(now.getTime() - amount * 30 * 24 * 60 * 60 * 1000);
+          date = new Date(now.getTime() - amount * 30 * 24 * 60 * 60 * 1000);
+          break;
         case 'year':
           // Approximate year as 365 days
-          return new Date(now.getTime() - amount * 365 * 24 * 60 * 60 * 1000);
+          date = new Date(now.getTime() - amount * 365 * 24 * 60 * 60 * 1000);
+          break;
+      }
+      
+      if (date) {
+        console.log(`Found relative date: ${date.toISOString()} (${amount} ${unit}s ago)`);
+        return date;
       }
     }
     
-    // Third attempt - looking for specific date formats in text
-    const dateTextRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2})(?:[a-z]{2})?,?\s+(\d{4})/i;
+    // Fifth attempt - specific date string patterns (Apr 2, 2025 format)
+    const dateTextRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2})(?:[a-z]{2})?,?\s+(\d{4})/i;
     match = html.match(dateTextRegex);
     
     if (match && match[1] && match[2] && match[3]) {
@@ -349,11 +673,53 @@ function extractPublishedDate(html: string): Date | null {
       if (month !== -1) {
         const day = parseInt(match[2], 10);
         const year = parseInt(match[3], 10);
-        return new Date(year, month, day);
+        const date = new Date(year, month, day);
+        
+        if (!isNaN(date.getTime())) {
+          console.log(`Found date in text: ${date.toISOString()}`);
+          return date;
+        }
       }
     }
     
-    // If we can't find a specific date, return the current date
+    // Sixth attempt - ISO-formatted date in the text (2025-04-02 format)
+    const isoDateRegex = /\b(\d{4})-(\d{2})-(\d{2})\b/;
+    match = html.match(isoDateRegex);
+    
+    if (match && match[1] && match[2] && match[3]) {
+      const year = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1; // JS months are 0-based
+      const day = parseInt(match[3], 10);
+      
+      if (year > 2000 && month >= 0 && month < 12 && day > 0 && day <= 31) {
+        const date = new Date(year, month, day);
+        if (!isNaN(date.getTime())) {
+          console.log(`Found ISO date: ${date.toISOString()}`);
+          return date;
+        }
+      }
+    }
+    
+    // Seventh attempt - less precise relative indicators (today, yesterday, etc.)
+    const vagueTimeRegex = /\b(today|yesterday)\b/i;
+    match = html.match(vagueTimeRegex);
+    
+    if (match && match[1]) {
+      const term = match[1].toLowerCase();
+      const now = new Date();
+      
+      if (term === 'today') {
+        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        console.log(`Found 'today' reference: ${date.toISOString()}`);
+        return date;
+      } else if (term === 'yesterday') {
+        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        console.log(`Found 'yesterday' reference: ${date.toISOString()}`);
+        return date;
+      }
+    }
+    
+    // If we can't find a specific date, use the current date
     console.log('No date found, using current date');
     return new Date();
   } catch (error) {
