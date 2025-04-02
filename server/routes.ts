@@ -2,9 +2,9 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { ZodError } from "zod";
-import { linkedInUrlSchema, insertPostSchema } from "@shared/schema";
+import { contentUrlSchema, insertPostSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
-import { analyzePostContent, extractLinkedInPostInfo } from "./openai";
+import { analyzePostContent, extractLinkedInPostInfo, extractSubstackInfo } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes - all prefixed with /api
@@ -46,11 +46,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Submit a LinkedIn URL for analysis
+  // Submit a LinkedIn or Substack URL for analysis
   app.post("/api/analyze", async (req: Request, res: Response) => {
     try {
       // Validate URL format
-      const validatedData = linkedInUrlSchema.parse(req.body);
+      const validatedData = contentUrlSchema.parse(req.body);
       const { url } = validatedData;
 
       // Create a post with processing status
@@ -67,13 +67,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process in the background and respond immediately with the post ID
       // to avoid timeout issues for long-running operations
       res.status(201).json({ 
-        message: "Post is being processed", 
+        message: "Content is being processed", 
         postId: newPost.id,
         post: newPost
       });
 
       // Now continue processing asynchronously
-      processLinkedInPost(newPost.id, url).catch(error => {
+      processContentPost(newPost.id, url).catch(error => {
         console.error(`Error processing post ${newPost.id}:`, error);
       });
       
@@ -82,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const formattedError = fromZodError(error);
         return res.status(400).json({ error: formattedError.message });
       }
-      res.status(500).json({ error: "Failed to process LinkedIn URL" });
+      res.status(500).json({ error: "Failed to process URL" });
     }
   });
 
@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the post with the provided content
       await storage.updatePost(postId, {
         content,
-        authorName: authorName || post.authorName || 'LinkedIn User',
+        authorName: authorName || post.authorName || 'Content Author',
         publishedDate: new Date(), // Use current date if none was extracted
         processingStatus: "analyzing" // Move to analysis phase
       });
@@ -169,9 +169,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// Helper function to process a LinkedIn post in the background
-async function processLinkedInPost(postId: number, url: string): Promise<void> {
-  console.log(`Starting to process LinkedIn post ${postId} with URL: ${url}`);
+// Helper function to process a LinkedIn or Substack post in the background
+async function processContentPost(postId: number, url: string): Promise<void> {
+  console.log(`Starting to process content from post ${postId} with URL: ${url}`);
   
   try {
     // Update the post initially with more detailed processing status
@@ -180,20 +180,26 @@ async function processLinkedInPost(postId: number, url: string): Promise<void> {
       processError: null
     });
     
-    // 1. Extract information from the LinkedIn post
-    console.log(`[Post ${postId}] Extracting information from LinkedIn URL`);
+    // 1. Extract information from the content URL
+    console.log(`[Post ${postId}] Extracting information from URL: ${url}`);
     let extractedInfo;
     
     try {
-      extractedInfo = await extractLinkedInPostInfo(url);
+      if (url.includes('substack.com') || url.includes('.substack.com')) {
+        // Handle Substack URLs
+        extractedInfo = await extractSubstackInfo(url);
+      } else {
+        // Handle LinkedIn URLs
+        extractedInfo = await extractLinkedInPostInfo(url);
+      }
       
       if (!extractedInfo.content || extractedInfo.content.trim().length === 0) {
-        throw new Error('No content was extracted from the LinkedIn post');
+        throw new Error('No content was extracted from the URL');
       }
       
       // Update the post with extracted information
       await storage.updatePost(postId, {
-        authorName: extractedInfo.authorName || 'LinkedIn User',
+        authorName: extractedInfo.authorName || 'Content Author',
         authorImage: extractedInfo.authorImage || '',
         content: extractedInfo.content,
         publishedDate: extractedInfo.publishedDate || new Date(),
@@ -251,8 +257,8 @@ async function processLinkedInPost(postId: number, url: string): Promise<void> {
         errorMessage = 'Rate limit exceeded: Please try again later';
       } else if (error.message.toLowerCase().includes('network') || error.message.toLowerCase().includes('timeout')) {
         errorMessage = 'Network error: Please check your internet connection';
-      } else if (error.message.toLowerCase().includes('url') || error.message.toLowerCase().includes('linkedin')) {
-        errorMessage = 'URL error: The LinkedIn URL may be invalid or inaccessible';
+      } else if (error.message.toLowerCase().includes('url')) {
+        errorMessage = 'URL error: The URL may be invalid or inaccessible';
       } else {
         errorMessage = `Error: ${error.message}`;
       }

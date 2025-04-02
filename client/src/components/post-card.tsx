@@ -119,8 +119,8 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               Instructions for manual content entry
             </h4>
             <p className="mt-1 text-xs text-blue-700">
-              1. Visit the LinkedIn post by clicking "View post on LinkedIn" above<br />
-              2. Copy the author name and post content<br />
+              1. Visit the original content by clicking "View" above<br />
+              2. Copy the author name and content<br />
               3. Paste them in the fields below<br />
               4. Our AI will analyze and categorize the content
             </p>
@@ -139,7 +139,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                 id="authorName"
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
-                placeholder="LinkedIn User"
+                placeholder="Content Author"
                 className="mt-1"
               />
             </div>
@@ -150,17 +150,17 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
-                Post Content
+                Content
               </label>
               <Textarea
                 id="manualContent"
                 value={manualContent}
                 onChange={(e) => setManualContent(e.target.value)}
-                placeholder="Paste the LinkedIn post content here..."
+                placeholder="Paste the content here..."
                 className="mt-1 min-h-[200px]"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Make sure to include the full post content for the most accurate categorization
+                Make sure to include the full content for the most accurate categorization
               </p>
             </div>
             
@@ -215,7 +215,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-gray-900">
-                    {post.authorName || "LinkedIn User"}
+                    {post.authorName || "Content Author"}
                   </h3>
                   <p className="text-xs text-gray-500">
                     {getTimeElapsed(post.createdAt)}
@@ -242,7 +242,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               <div className="flex items-center">
                 <div className="h-2 w-2 bg-[#0A66C2] rounded-full animate-pulse mr-2"></div>
                 <span className="text-sm text-gray-500">
-                  {post.processingStatus === "extracting" ? "Extracting post content from LinkedIn..." : "Processing post content..."}
+                  {post.processingStatus === "extracting" ? "Extracting content..." : "Processing content..."}
                 </span>
               </div>
             </div>
@@ -258,21 +258,21 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <h3 className="text-sm font-medium text-red-800">Processing failed</h3>
                   <div className="mt-2 text-sm text-red-700">
                     {post.processError?.includes('422') ? (
-                      <p>LinkedIn API extraction failed. This could be due to content protection or API limitations.</p>
+                      <p>Content extraction failed. This could be due to content protection or API limitations.</p>
                     ) : post.processError?.includes('429') ? (
                       <p>Rate limit exceeded. Please wait a moment and try again.</p>
                     ) : post.processError?.includes('authentication') ? (
-                      <p>This LinkedIn post requires authentication or is private. Please try a public post instead.</p>
+                      <p>This content requires authentication or is private. Please try public content instead.</p>
                     ) : post.processError?.includes('URL') ? (
-                      <p>The LinkedIn URL format is invalid or not supported. Please check the URL and try again.</p>
+                      <p>The URL format is invalid or not supported. Please check the URL and try again.</p>
                     ) : (
-                      <p>There was an error processing this LinkedIn post: {post.processError || "Unknown error"}.</p>
+                      <p>There was an error processing this content: {post.processError || "Unknown error"}.</p>
                     )}
                     
                     <div className="mt-3 p-3 border border-yellow-300 bg-yellow-50 rounded-md">
                       <h4 className="font-medium text-yellow-800">Solution: Manual Entry Available</h4>
                       <p className="mt-1 text-sm text-yellow-700">
-                        You can manually enter the content from this LinkedIn post for AI analysis and categorization.
+                        You can manually enter the content for AI analysis and categorization.
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center">
@@ -281,7 +281,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                             <polyline points="15 3 21 3 21 9"></polyline>
                             <line x1="10" y1="14" x2="21" y2="3"></line>
                           </svg>
-                          View post on LinkedIn
+                          View original content
                         </a>
                         <Button 
                           onClick={() => setShowManualInput(true)} 

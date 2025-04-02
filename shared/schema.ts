@@ -57,12 +57,19 @@ export const insertPostSchema = createInsertSchema(posts).pick({
   processingStatus: true,
 });
 
-export const linkedInUrlSchema = z.object({
-  url: z.string().url().startsWith("https://www.linkedin.com/", {
-    message: "Must be a valid LinkedIn URL"
-  })
+export const contentUrlSchema = z.object({
+  url: z.string().url().refine(
+    (url) => {
+      return url.startsWith("https://www.linkedin.com/") || 
+             url.includes("substack.com/") || 
+             url.includes(".substack.com/");
+    }, 
+    {
+      message: "Must be a valid LinkedIn or Substack URL"
+    }
+  )
 });
 
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Post = typeof posts.$inferSelect;
-export type LinkedInUrl = z.infer<typeof linkedInUrlSchema>;
+export type ContentUrl = z.infer<typeof contentUrlSchema>;

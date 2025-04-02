@@ -13,7 +13,7 @@ import { Filter } from "lucide-react";
 import { PostCard } from "@/components/post-card";
 import { CategoryFilter } from "@/components/category-filter";
 import { apiRequest } from "@/lib/queryClient";
-import { linkedInUrlSchema, type Post } from "@shared/schema";
+import { contentUrlSchema, type Post } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -23,7 +23,7 @@ export default function Home() {
   
   // Create form with zod validation
   const form = useForm<{ url: string }>({
-    resolver: zodResolver(linkedInUrlSchema),
+    resolver: zodResolver(contentUrlSchema),
     defaultValues: {
       url: "",
     },
@@ -54,15 +54,15 @@ export default function Home() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Post submitted for analysis",
-        description: "Your LinkedIn post is being analyzed. Results will appear shortly.",
+        title: "Content submitted for analysis",
+        description: "Your content is being analyzed. Results will appear shortly.",
       });
       form.reset();
       refetchPosts();
     },
     onError: (error) => {
       toast({
-        title: "Failed to analyze post",
+        title: "Failed to analyze content",
         description: error.message,
         variant: "destructive",
       });
@@ -116,16 +116,16 @@ export default function Home() {
         <main className="relative flex-1 overflow-y-auto focus:outline-none bg-gray-50">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              {/* LinkedIn Post Analyzer Header Section */}
+              {/* Content Analyzer Header Section */}
               <Card className="mb-6">
                 <CardHeader className="px-6">
-                  <CardTitle className="text-xl">LinkedIn Post Analyzer</CardTitle>
-                  <CardDescription>Extract, analyze, and categorize LinkedIn posts</CardDescription>
+                  <CardTitle className="text-xl">Content Analyzer</CardTitle>
+                  <CardDescription>Extract, analyze, and categorize LinkedIn posts and Substack newsletters</CardDescription>
                 </CardHeader>
                 
-                {/* Analyze LinkedIn Post Section */}
+                {/* Analyze Content Section */}
                 <CardContent className="border-t border-gray-200 px-6 py-5">
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">Analyze LinkedIn post</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Analyze Content</h2>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       <FormField
@@ -133,11 +133,11 @@ export default function Home() {
                         name="url"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>LinkedIn Post URL</FormLabel>
+                            <FormLabel>Content URL</FormLabel>
                             <div className="flex items-start gap-3">
                               <FormControl>
                                 <Input 
-                                  placeholder="https://www.linkedin.com/posts/..." 
+                                  placeholder="https://www.linkedin.com/posts/... or https://newsletter.example.com/p/..." 
                                   {...field} 
                                   className="flex-1"
                                 />
@@ -162,7 +162,7 @@ export default function Home() {
               {/* Results Section */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between px-6 py-5">
-                  <CardTitle className="text-lg font-medium">Analyzed posts</CardTitle>
+                  <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
                   <div className="flex space-x-2">
                     <Select 
                       value={selectedCategory} 
@@ -201,17 +201,17 @@ export default function Home() {
                   </div>
                 </CardHeader>
                 
-                {/* List of analyzed posts */}
+                {/* List of analyzed content */}
                 <CardContent className="px-0">
                   {isLoadingPosts ? (
-                    <div className="p-6 text-center">Loading posts...</div>
+                    <div className="p-6 text-center">Loading content...</div>
                   ) : sortedPosts.length === 0 ? (
                     <div className="p-6 text-center text-gray-500">
-                      No posts have been analyzed yet. Enter a LinkedIn URL above to get started.
+                      No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
                     </div>
                   ) : (
                     <div>
-                      {/* Show processing and failed posts at the top */}
+                      {/* Show processing and analyzing content at the top */}
                       {sortedPosts
                         .filter(post => post.processingStatus === "processing" || post.processingStatus === "extracting" || post.processingStatus === "analyzing")
                         .map((post) => (
@@ -223,7 +223,7 @@ export default function Home() {
                         ))
                       }
                       
-                      {/* Show failed posts next */}
+                      {/* Show failed content next */}
                       {sortedPosts
                         .filter(post => post.processingStatus === "failed")
                         .map((post) => (
@@ -235,7 +235,7 @@ export default function Home() {
                         ))
                       }
                       
-                      {/* Show completed posts last */}
+                      {/* Show completed content last */}
                       {sortedPosts
                         .filter(post => post.processingStatus === "completed")
                         .map((post) => (
@@ -278,7 +278,7 @@ export default function Home() {
                                     )}
                                   </div>
                                   <div className="ml-3">
-                                    <h3 className="text-sm font-medium text-gray-900">{post.authorName || "LinkedIn User"}</h3>
+                                    <h3 className="text-sm font-medium text-gray-900">{post.authorName || "Content Author"}</h3>
                                     <p className="text-xs text-gray-500">
                                       {post.createdAt 
                                         ? new Date(post.createdAt).toLocaleString() 

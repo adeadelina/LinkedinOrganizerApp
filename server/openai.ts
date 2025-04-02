@@ -251,3 +251,105 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
     throw new Error(`Failed to extract LinkedIn post info: ${error.message || 'Unknown error'}`);
   }
 }
+
+/**
+ * Extracts information from Substack newsletter URL
+ * @param url Substack newsletter URL
+ * @returns Extraction result with content for analysis
+ */
+export async function extractSubstackInfo(url: string): Promise<{
+  authorName: string;
+  authorImage: string;
+  content: string;
+  publishedDate: Date;
+}> {
+  // Input validation
+  if (!url || !url.trim()) {
+    throw new Error('Substack URL is required');
+  }
+  
+  // Basic URL validation
+  if (!url.includes('substack.com') && !url.includes('.substack.com')) {
+    throw new Error('URL must be from Substack');
+  }
+
+  console.log(`Extracting information from Substack URL: ${url}`);
+  
+  try {
+    // For Substack, we'll use OpenAI to extract relevant content from the URL directly
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key is not configured. Please add it to your environment variables.');
+    }
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { 
+          role: "system", 
+          content: "You are a helpful assistant that extracts and summarizes content from Substack newsletters."
+        },
+        { 
+          role: "user", 
+          content: `Please visit this Substack newsletter URL: ${url} and extract the following information:
+          1. The title of the newsletter
+          2. The author's name
+          3. The main content of the newsletter
+          4. When it was published (if available)
+          
+          Format your response as JSON with the following fields:
+          - authorName
+          - title
+          - content (include the full main content)
+          - publishedDate (in ISO format if available, otherwise null)`
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      max_tokens: 4000
+    });
+    
+    if (!response.choices || response.choices.length === 0 || !response.choices[0].message.content) {
+      throw new Error('Invalid response from OpenAI API');
+    }
+    
+    const result = JSON.parse(response.choices[0].message.content);
+    
+    // Validate and construct the result
+    const title = result.title || 'Substack Newsletter';
+    const content = result.content || '';
+    
+    // Add title to the content for better context
+    const fullContent = `${title}\n\n${content}`;
+    
+    // Use current date if no published date is available
+    let publishedDate: Date;
+    try {
+      publishedDate = result.publishedDate ? new Date(result.publishedDate) : new Date();
+    } catch (e) {
+      publishedDate = new Date();
+    }
+    
+    console.log(`Successfully extracted Substack content (${fullContent.length} chars)`);
+    
+    return {
+      authorName: result.authorName || 'Substack Author',
+      authorImage: '', // No image extraction for Substack
+      content: fullContent,
+      publishedDate: publishedDate
+    };
+  } catch (error: any) {
+    console.error("Error extracting Substack info:", error);
+    
+    // More descriptive error messages based on the error type
+    if (error.message?.includes('API key')) {
+      throw new Error('OpenAI API key is invalid or missing. Please check your API configuration.');
+    } else if (error.message?.includes('rate limit') || error.message?.includes('429')) {
+      throw new Error('Rate limit exceeded for OpenAI API. Please try again later.');
+    } else if (error.message?.includes('quota') || error.message?.includes('billing')) {
+      throw new Error('OpenAI API quota exceeded. Please check your billing information.');
+    }
+    
+    // If no specific error is identified, use the original error message
+    throw new Error(`Failed to extract Substack info: ${error.message || 'Unknown error'}`);
+  }
+}
