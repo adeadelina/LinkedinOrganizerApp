@@ -5,7 +5,7 @@ import { CategoryFilter } from "@/components/category-filter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Eye, Loader2, Tag, Plus, Edit2, X, Search, ExternalLink } from "lucide-react";
+import { Check, Eye, Loader2, Tag, Plus, Edit2, X } from "lucide-react";
 import type { Post } from "@shared/schema";
 import { MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -37,7 +37,6 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [isContentDialogOpen, setIsContentDialogOpen] = useState(false);
   
   // State for new category input
   const [newCategory, setNewCategory] = useState("");
@@ -274,20 +273,14 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </div>
           </div>
         ) : (
-          <div 
-            className="mt-1 text-sm text-gray-700 space-y-2 cursor-pointer"
-            onClick={() => setIsContentDialogOpen(true)}
-          >
+          <div className="mt-1 text-sm text-gray-700 space-y-2">
             {post.content?.split('\n').map((paragraph, i) => (
               paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
             )).slice(0, expanded ? undefined : 5)}
             
             {!expanded && post.content && post.content.split('\n').length > 5 && (
               <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleExpand();
-                }}
+                onClick={toggleExpand}
                 className="text-[#0A66C2] hover:text-blue-700 font-medium text-sm"
               >
                 Read more...
@@ -296,22 +289,12 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             
             {expanded && (
               <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleExpand();
-                }}
+                onClick={toggleExpand}
                 className="text-[#0A66C2] hover:text-blue-700 font-medium text-sm"
               >
                 Show less
               </button>
             )}
-            
-            <div className="text-center mt-2">
-              <span className="text-xs text-gray-500 inline-flex items-center">
-                <Search className="h-3 w-3 mr-1" />
-                Click to view full content
-              </span>
-            </div>
           </div>
         )}
         
