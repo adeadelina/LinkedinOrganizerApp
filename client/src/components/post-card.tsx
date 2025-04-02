@@ -203,27 +203,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   {getTimeElapsed(post.createdAt)}
                 </p>
               </div>
-              {!isProcessing && !isFailed && (
-                <div className="flex flex-wrap gap-1">
-                  {/* Deduplicate categories before mapping */}
-                  {(post.categories || []).filter((category, index, self) => 
-                    self.indexOf(category) === index
-                  ).slice(0, 2).map((category) => (
-                    <CategoryFilter 
-                      key={category} 
-                      category={category} 
-                      onClick={() => {
-                        // Same as bottom categories, clickable for consistency
-                      }}
-                    />
-                  ))}
-                  {post.categories && post.categories.length > 2 && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                      +{post.categories.length - 2}
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* Categories removed from top of post */}
             </div>
           </div>
         </div>
