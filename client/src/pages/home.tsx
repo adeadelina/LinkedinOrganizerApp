@@ -55,10 +55,21 @@ export default function Home() {
       console.log("Server response status:", res.status);
       const jsonData = await res.json();
       console.log("Server response data:", jsonData);
+      
+      // We need to immediately refetch to get status updates
+      if (jsonData.postId) {
+        setTimeout(() => {
+          console.log("Refetching posts to get latest status...");
+          refetchPosts();
+        }, 500);
+      }
+      
       return jsonData;
     },
     onSuccess: (data) => {
       console.log("Analysis success, data:", data);
+      
+      // Handle the response
       if (data.exists) {
         toast({
           title: "URL already analyzed",
@@ -74,12 +85,18 @@ export default function Home() {
           duration: 5000, // 5 seconds
         });
       }
+      
       // Reset the form after showing the toast message
       form.reset();
-      // Refetch posts to update the list
-      setTimeout(() => {
-        refetchPosts();
-      }, 1000); // Add a slight delay to refetch
+      
+      // Set up multiple refetches to catch status changes
+      const refetchIntervals = [2000, 5000, 10000]; // Refetch after 2s, 5s, and 10s
+      refetchIntervals.forEach(interval => {
+        setTimeout(() => {
+          console.log(`Refetching posts after ${interval}ms...`);
+          refetchPosts();
+        }, interval);
+      });
     },
     onError: (error) => {
       console.error("Analysis error:", error);

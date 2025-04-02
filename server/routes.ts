@@ -53,13 +53,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = contentUrlSchema.parse(req.body);
       const { url } = validatedData;
 
-      // Check if the URL already exists in the database
+      // Clean URL by removing tracking parameters if any (utm_, etc.)
+      const cleanUrl = new URL(url);
+      // Remove common tracking parameters
+      ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(param => {
+        cleanUrl.searchParams.delete(param);
+      });
+      const normalizedUrl = cleanUrl.toString();
+      
+      // Check if a similar URL already exists in the database by checking base paths
       const allPosts = await storage.getAllPosts();
-      const existingPost = allPosts.find(post => post.url === url);
+      
+      // Check both the exact URL and normalized version for existing posts
+      let existingPost = allPosts.find(post => {
+        // Exact match
+        if (post.url === url) return true;
+        
+        // Try to normalize the stored URL for comparison
+        try {
+          const storedUrl = new URL(post.url);
+          // Remove tracking params from stored URL as well
+          ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(param => {
+            storedUrl.searchParams.delete(param);
+          });
+          
+          // Check for path + hostname match (ignoring other parameters)
+          return storedUrl.hostname === cleanUrl.hostname && 
+                 storedUrl.pathname === cleanUrl.pathname;
+        } catch (e) {
+          return false;
+        }
+      });
 
       if (existingPost) {
         // If URL already exists, return the existing post
         console.log(`URL already exists in database: ${url}`);
+        console.log(`Matching post ID: ${existingPost.id}`);
         return res.status(200).json({
           message: "Content already exists",
           postId: existingPost.id,
