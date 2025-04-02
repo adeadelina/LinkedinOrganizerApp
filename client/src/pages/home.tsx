@@ -49,31 +49,43 @@ export default function Home() {
   // Mutation for analyzing a LinkedIn post
   const { mutate: analyzePost, isPending: isAnalyzing } = useMutation({
     mutationFn: async (url: string) => {
+      console.log("Submitting URL for analysis:", url);
       // Server will check for duplicates, we just send the URL
       const res = await apiRequest("POST", "/api/analyze", { url });
-      return res.json();
+      console.log("Server response status:", res.status);
+      const jsonData = await res.json();
+      console.log("Server response data:", jsonData);
+      return jsonData;
     },
     onSuccess: (data) => {
+      console.log("Analysis success, data:", data);
       if (data.exists) {
         toast({
           title: "URL already analyzed",
           description: "This content has already been analyzed and is in your library.",
+          variant: "default",
+          duration: 5000, // 5 seconds
         });
       } else {
         toast({
           title: "Content submitted for analysis",
           description: "Your content is being analyzed. Results will appear shortly.",
+          variant: "default",
+          duration: 5000, // 5 seconds
         });
       }
       // Reset the form after showing the toast message
       form.reset();
       // Refetch posts to update the list
-      refetchPosts();
+      setTimeout(() => {
+        refetchPosts();
+      }, 1000); // Add a slight delay to refetch
     },
     onError: (error) => {
+      console.error("Analysis error:", error);
       toast({
         title: "Failed to analyze content",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     },
@@ -81,9 +93,24 @@ export default function Home() {
 
   // Form submission handler
   const onSubmit = async (data: { url: string }) => {
+    console.log("Form submitted with URL:", data.url);
     // Don't submit if already analyzing or if the URL is empty
-    if (isAnalyzing || !data.url.trim()) return;
+    if (isAnalyzing) {
+      console.log("Submission blocked: Already analyzing");
+      return;
+    }
     
+    if (!data.url.trim()) {
+      console.log("Submission blocked: Empty URL");
+      toast({
+        title: "Empty URL",
+        description: "Please enter a LinkedIn or Substack URL to analyze",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Proceed with analysis
     analyzePost(data.url);
   };
 

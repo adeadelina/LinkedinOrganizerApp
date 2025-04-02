@@ -238,12 +238,28 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           </div>
           
           {isProcessing ? (
-            <div className="ml-5 flex-shrink-0 flex items-center space-x-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-center justify-between">
               <div className="flex items-center">
-                <div className="h-2 w-2 bg-[#0A66C2] rounded-full animate-pulse mr-2"></div>
-                <span className="text-sm text-gray-500">
-                  {post.processingStatus === "extracting" ? "Extracting content..." : "Processing content..."}
-                </span>
+                <div className="mr-3 flex-shrink-0 bg-blue-100 rounded-full p-1">
+                  <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-blue-800">
+                    {post.processingStatus === "extracting" 
+                      ? "Extracting content..." 
+                      : post.processingStatus === "analyzing" 
+                        ? "Analyzing content..." 
+                        : "Processing content..."}
+                  </h3>
+                  <p className="mt-1 text-xs text-blue-600">
+                    Please wait while we process your content. This may take a few moments.
+                  </p>
+                </div>
+              </div>
+              <div className="ml-auto flex items-center space-x-1">
+                <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-ping"></span>
+                <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-pulse animation-delay-200"></span>
+                <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-ping animation-delay-500"></span>
               </div>
             </div>
           ) : isFailed ? (
