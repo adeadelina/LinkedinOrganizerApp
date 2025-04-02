@@ -126,7 +126,12 @@ export function Sidebar({
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => onAuthorSearch && authorSearchTerm.trim() && onAuthorSearch(authorSearchTerm)}
+                  onClick={() => {
+                    if (onAuthorSearch && authorSearchTerm.trim()) {
+                      console.log("Searching for author:", authorSearchTerm);
+                      onAuthorSearch(authorSearchTerm);
+                    }
+                  }}
                   className="w-full mt-2"
                   disabled={!authorSearchTerm.trim()}
                 >

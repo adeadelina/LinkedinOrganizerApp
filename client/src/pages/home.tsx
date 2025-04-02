@@ -128,17 +128,28 @@ export default function Home() {
   const getMostRecentPost = () => {
     if (posts.length === 0) return [];
     
-    // Sort all posts by createdAt date
-    const sortedAllPosts = [...posts].sort((a, b) => {
+    // Apply author filter first if one is selected
+    const authorFiltered = selectedAuthor
+      ? posts.filter(post => post.authorName && post.authorName.toLowerCase().includes(selectedAuthor.toLowerCase()))
+      : posts;
+    
+    if (authorFiltered.length === 0) return [];
+    
+    // Sort filtered posts by createdAt date
+    const sortedPosts = [...authorFiltered].sort((a, b) => {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
     
     // Return only the most recent post
-    return [sortedAllPosts[0]];
+    return [sortedPosts[0]];
   };
   
   // Get the most recent post
   const mostRecentPost = getMostRecentPost();
+  
+  // Log for debugging
+  console.log("Selected author:", selectedAuthor);
+  console.log("Most recent post:", mostRecentPost);
   
   // Filter posts by category and author - exclude the most recent post from this list
   const filteredPosts = posts.filter((post) => {
@@ -147,6 +158,7 @@ export default function Home() {
     
     // Apply author filter if one is selected
     if (selectedAuthor && (!post.authorName || !post.authorName.toLowerCase().includes(selectedAuthor.toLowerCase()))) {
+      console.log(`Author filter: ${selectedAuthor} - rejected post by ${post.authorName}`);
       return false;
     }
     
@@ -309,7 +321,23 @@ export default function Home() {
                       <div className="p-6 text-center">Loading content...</div>
                     ) : mostRecentPost.length === 0 ? (
                       <div className="p-6 text-center text-gray-500">
-                        No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
+                        {selectedAuthor ? (
+                          <>
+                            No content found by author <span className="font-medium">{selectedAuthor}</span>.
+                            <br />
+                            <Button
+                              variant="link"
+                              className="mt-2 text-blue-600"
+                              onClick={() => setSelectedAuthor("")}
+                            >
+                              View all posts
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
+                          </>
+                        )}
                       </div>
                     ) : (
                       <div>
@@ -326,7 +354,14 @@ export default function Home() {
                   </CardContent>
                   
                   {/* Categories Section */}
-                  {Object.keys(postsByCategory).length > 0 && (
+                  {selectedAuthor && Object.keys(postsByCategory).length === 0 ? (
+                    <CardContent className="border-t border-gray-200 px-6 py-5">
+                      <h2 className="text-lg font-medium text-gray-900 mb-4">Categories</h2>
+                      <div className="p-6 text-center text-gray-500">
+                        No categories with content from <span className="font-medium">{selectedAuthor}</span>.
+                      </div>
+                    </CardContent>
+                  ) : Object.keys(postsByCategory).length > 0 && (
                     <CardContent className="border-t border-gray-200 px-6 py-5">
                       <h2 className="text-lg font-medium text-gray-900 mb-4">Categories</h2>
                       
