@@ -9,7 +9,7 @@ export function CategoryFilter({ category, className }: CategoryFilterProps) {
   // Define category styles based on the category name
   const getCategoryStyles = (category: string) => {
     switch (category) {
-      case "PLC strategy":
+      case "PLG Strategy":
         return "bg-blue-100 text-blue-800";
       case "Pricing experiments":
         return "bg-purple-100 text-purple-800";

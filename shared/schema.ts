@@ -18,7 +18,7 @@ export type User = typeof users.$inferSelect;
 
 // Category definitions
 export const categories = [
-  "PLC strategy",
+  "PLG Strategy",
   "Pricing experiments",
   "Onboarding",
   "Stakeholder management",
