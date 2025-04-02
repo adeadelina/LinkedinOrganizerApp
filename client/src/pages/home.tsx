@@ -113,7 +113,7 @@ export default function Home() {
       console.log("Submission blocked: Empty URL");
       toast({
         title: "Empty URL",
-        description: "Please enter a LinkedIn post or Substack newsletter URL to analyze",
+        description: "Please enter a LinkedIn or Substack URL to analyze",
         variant: "destructive",
       });
       return;
@@ -215,7 +215,7 @@ export default function Home() {
                               <div className="flex items-start gap-3">
                                 <FormControl>
                                   <Input 
-                                    placeholder="https://www.linkedin.com/posts/... or https://newsletter.domain.com/p/... or https://writer.substack.com/p/..." 
+                                    placeholder="https://www.linkedin.com/posts/... or https://newsletter.example.com/p/..." 
                                     {...field} 
                                     className="flex-1"
                                   />
@@ -285,7 +285,7 @@ export default function Home() {
                       <div className="p-6 text-center">Loading content...</div>
                     ) : mostRecentPost.length === 0 ? (
                       <div className="p-6 text-center text-gray-500">
-                        No content has been analyzed yet. Enter a LinkedIn post or Substack newsletter URL above to get started.
+                        No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
                       </div>
                     ) : (
                       <div>
