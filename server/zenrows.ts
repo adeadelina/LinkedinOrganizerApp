@@ -87,18 +87,14 @@ export async function scrapeLinkedInPost(url: string): Promise<{
   publishedDate: Date;
 }> {
   try {
-    // Transform the URL to a more scraper-friendly format
-    const transformedUrl = transformLinkedInUrl(url);
-    console.log(`Scraping LinkedIn post from transformed URL: ${transformedUrl}`);
+    // Use the original URL as requested
+    console.log(`Scraping LinkedIn post from URL: ${url}`);
     
-    // Configure the request parameters for ZenRows
-    // Using only parameters documented in their API reference that are known to work
+    // Configure the request parameters for ZenRows with the exact parameters as specified
     const params = {
-      url: transformedUrl,
-      apikey: API_KEY,
-      js_render: 'true',        // Enable JavaScript rendering for dynamic content
-      premium_proxy: 'true',    // Use premium proxies for better success rates
-      wait_for: '10000'         // Wait time in ms - increased to allow LinkedIn to fully load
+      'url': url,
+      'apikey': API_KEY,
+      'response_type': 'plaintext',
     };
 
     // Make the request to ZenRows API
