@@ -73,9 +73,17 @@ export const insertPostSchema = createInsertSchema(posts).pick({
 export const contentUrlSchema = z.object({
   url: z.string().url().refine(
     (url) => {
-      return url.startsWith("https://www.linkedin.com/") || 
-             url.includes("substack.com/") || 
-             url.includes(".substack.com/");
+      // LinkedIn validation
+      const isLinkedIn = url.startsWith("https://www.linkedin.com/");
+      
+      // Substack validation - supporting various formats
+      const isSubstack = 
+        url.includes("substack.com/") || // base substack domain
+        url.includes(".substack.com/") || // custom substack domain
+        /https:\/\/newsletter\.[^\/]+\.com\/p\//.test(url) || // custom domain newsletter
+        /https:\/\/[^\/]+\.substack\.com\/p\//.test(url); // writer.substack.com/p/slug format
+      
+      return isLinkedIn || isSubstack;
     }, 
     {
       message: "Must be a valid LinkedIn or Substack URL"

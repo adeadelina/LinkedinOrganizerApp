@@ -268,75 +268,104 @@ export async function extractSubstackInfo(url: string): Promise<{
     throw new Error('Substack URL is required');
   }
   
-  // Basic URL validation
-  if (!url.includes('substack.com') && !url.includes('.substack.com')) {
-    throw new Error('URL must be from Substack');
+  // Improved URL validation for various Substack formats
+  const substackRegexes = [
+    /substack\.com\/p\//,                      // substack.com/p/slug
+    /\.substack\.com\/p\//,                    // name.substack.com/p/slug
+    /newsletter\.[^\/]+\.com\/p\//,            // newsletter.domain.com/p/slug
+    /https:\/\/[^\/]+\.substack\.com\/p\//     // https://writer.substack.com/p/slug
+  ];
+  
+  const isValidSubstack = url.includes('substack.com') || 
+                          url.includes('.substack.com') || 
+                          substackRegexes.some(regex => regex.test(url));
+  
+  if (!isValidSubstack) {
+    throw new Error('URL must be from Substack. Supported formats include substack.com/p/..., name.substack.com/p/..., or newsletter.domain.com/p/...');
   }
 
   console.log(`Extracting information from Substack URL: ${url}`);
   
   try {
-    // For Substack, we'll use OpenAI to extract relevant content from the URL directly
+    // Check if OpenAI API key is available
     if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured. Please add it to your environment variables.');
+      console.warn('OpenAI API key is not configured. Using fallback extraction method.');
+      return await extractSubstackWithFallback(url);
     }
     
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { 
-          role: "system", 
-          content: "You are a helpful assistant that extracts and summarizes content from Substack newsletters."
-        },
-        { 
-          role: "user", 
-          content: `Please visit this Substack newsletter URL: ${url} and extract the following information:
-          1. The title of the newsletter
-          2. The author's name
-          3. The main content of the newsletter
-          4. When it was published (if available)
-          
-          Format your response as JSON with the following fields:
-          - authorName
-          - title
-          - content (include the full main content)
-          - publishedDate (in ISO format if available, otherwise null)`
-        }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-      max_tokens: 4000
-    });
-    
-    if (!response.choices || response.choices.length === 0 || !response.choices[0].message.content) {
-      throw new Error('Invalid response from OpenAI API');
-    }
-    
-    const result = JSON.parse(response.choices[0].message.content);
-    
-    // Validate and construct the result
-    const title = result.title || 'Substack Newsletter';
-    const content = result.content || '';
-    
-    // Add title to the content for better context
-    const fullContent = `${title}\n\n${content}`;
-    
-    // Use current date if no published date is available
-    let publishedDate: Date;
     try {
-      publishedDate = result.publishedDate ? new Date(result.publishedDate) : new Date();
-    } catch (e) {
-      publishedDate = new Date();
+      // First attempt: Use OpenAI to extract content
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { 
+            role: "system", 
+            content: "You are a helpful assistant that extracts and summarizes content from Substack newsletters."
+          },
+          { 
+            role: "user", 
+            content: `Please visit this Substack newsletter URL: ${url} and extract the following information:
+            1. The title of the newsletter
+            2. The author's name
+            3. The main content of the newsletter (include the full text)
+            4. When it was published (if available)
+            
+            Format your response as JSON with the following fields:
+            - authorName
+            - title
+            - content (include the full main content)
+            - publishedDate (in ISO format if available, otherwise null)`
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+        max_tokens: 4000
+      });
+      
+      if (!response.choices || response.choices.length === 0 || !response.choices[0].message.content) {
+        throw new Error('Invalid response from OpenAI API');
+      }
+      
+      const result = JSON.parse(response.choices[0].message.content);
+      
+      // Validate and construct the result
+      const title = result.title || 'Substack Newsletter';
+      const content = result.content || '';
+      
+      // Add title to the content for better context
+      const fullContent = `${title}\n\n${content}`;
+      
+      // Use current date if no published date is available
+      let publishedDate: Date;
+      try {
+        publishedDate = result.publishedDate ? new Date(result.publishedDate) : new Date();
+      } catch (e) {
+        publishedDate = new Date();
+      }
+      
+      console.log(`Successfully extracted Substack content (${fullContent.length} chars)`);
+      
+      return {
+        authorName: result.authorName || 'Substack Author',
+        authorImage: '', // No image extraction for Substack
+        content: fullContent,
+        publishedDate: publishedDate
+      };
+    } catch (openaiError: any) {
+      console.error("OpenAI extraction error:", openaiError);
+      
+      // Handle OpenAI specific errors
+      if (openaiError.message?.includes('429') || 
+          openaiError.message?.includes('rate limit') || 
+          openaiError.status === 429 ||
+          openaiError.error?.type === 'insufficient_quota') {
+        console.warn('OpenAI API rate limit or quota exceeded. Using fallback extraction method.');
+        return await extractSubstackWithFallback(url);
+      }
+      
+      // Pass through the error to be handled in the outer catch block
+      throw openaiError;
     }
-    
-    console.log(`Successfully extracted Substack content (${fullContent.length} chars)`);
-    
-    return {
-      authorName: result.authorName || 'Substack Author',
-      authorImage: '', // No image extraction for Substack
-      content: fullContent,
-      publishedDate: publishedDate
-    };
   } catch (error: any) {
     console.error("Error extracting Substack info:", error);
     
@@ -345,11 +374,87 @@ export async function extractSubstackInfo(url: string): Promise<{
       throw new Error('OpenAI API key is invalid or missing. Please check your API configuration.');
     } else if (error.message?.includes('rate limit') || error.message?.includes('429')) {
       throw new Error('Rate limit exceeded for OpenAI API. Please try again later.');
-    } else if (error.message?.includes('quota') || error.message?.includes('billing')) {
+    } else if (error.message?.includes('quota') || error.message?.includes('billing') || 
+               error.error?.type === 'insufficient_quota') {
       throw new Error('OpenAI API quota exceeded. Please check your billing information.');
+    } else if (error.message?.includes('invalid_request_error')) {
+      throw new Error('Invalid request to OpenAI API. The URL format might not be supported.');
     }
     
     // If no specific error is identified, use the original error message
     throw new Error(`Failed to extract Substack info: ${error.message || 'Unknown error'}`);
+  }
+}
+
+/**
+ * Fallback method to extract content from Substack URLs without using OpenAI
+ * Attempts to extract data from the URL structure and generate placeholder content
+ */
+async function extractSubstackWithFallback(url: string): Promise<{
+  authorName: string;
+  authorImage: string;
+  content: string;
+  publishedDate: Date;
+}> {
+  console.log(`Using fallback extraction for Substack URL: ${url}`);
+  
+  try {
+    // Extract newsletter name and slug from URL
+    let authorName = 'Substack Author';
+    let title = 'Substack Newsletter';
+    
+    // Extract newsletter name from URL
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    
+    if (hostname.includes('substack.com')) {
+      // Format: writer.substack.com
+      const subdomain = hostname.split('.')[0];
+      if (subdomain && subdomain !== 'www' && subdomain !== 'substack') {
+        authorName = subdomain.charAt(0).toUpperCase() + subdomain.slice(1);
+      }
+    } else if (hostname.includes('newsletter.')) {
+      // Format: newsletter.domain.com
+      const domainParts = hostname.split('.');
+      if (domainParts.length >= 2) {
+        authorName = domainParts[1].charAt(0).toUpperCase() + domainParts[1].slice(1);
+      }
+    }
+    
+    // Extract post title from URL path
+    const pathParts = urlObj.pathname.split('/');
+    if (pathParts.length >= 3 && pathParts[1] === 'p') {
+      const slug = pathParts[2];
+      title = slug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
+    const content = `This content was extracted from ${url} using a fallback method.
+    
+Title: ${title}
+
+The full content of this Substack post could not be directly accessed due to API limitations. 
+The post is from ${authorName}'s Substack newsletter.
+
+Please visit the original URL to read the complete article.`;
+    
+    return {
+      authorName,
+      authorImage: '',
+      content,
+      publishedDate: new Date()
+    };
+  } catch (error: any) {
+    console.error("Error in fallback extraction:", error);
+    
+    // Return minimal content if extraction fails
+    return {
+      authorName: 'Substack Author',
+      authorImage: '',
+      content: `Content from ${url} - This Substack post could not be processed. Please visit the original URL to read the article.`,
+      publishedDate: new Date()
+    };
   }
 }
