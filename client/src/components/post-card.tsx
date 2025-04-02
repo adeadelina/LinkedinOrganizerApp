@@ -325,6 +325,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               
               <div className="flex items-center space-x-2">
                 <Button 
+                  id={`edit-categories-${post.id}`}
                   variant="outline" 
                   size="sm" 
                   className="text-xs"
