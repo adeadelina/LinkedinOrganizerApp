@@ -14,7 +14,6 @@ export interface IStorage {
   getAllPosts(): Promise<Post[]>;
   getPostById(id: number): Promise<Post | undefined>;
   getPostsByCategory(category: string): Promise<Post[]>;
-  getPostsByAuthor(author: string): Promise<Post[]>;
   createPost(post: InsertPost): Promise<Post>;
   updatePost(id: number, post: Partial<InsertPost>): Promise<Post | undefined>;
   deletePost(id: number): Promise<boolean>;
@@ -112,21 +111,6 @@ export class MemStorage implements IStorage {
   async getPostsByCategory(category: string): Promise<Post[]> {
     return Array.from(this.posts.values())
       .filter(post => post.categories?.includes(category))
-      .sort((a, b) => {
-        if (!a.createdAt && !b.createdAt) return 0;
-        if (!a.createdAt) return 1;
-        if (!b.createdAt) return -1;
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      });
-  }
-
-  async getPostsByAuthor(author: string): Promise<Post[]> {
-    const searchTerm = author.toLowerCase();
-    return Array.from(this.posts.values())
-      .filter(post => {
-        if (!post.authorName) return false;
-        return post.authorName.toLowerCase().includes(searchTerm);
-      })
       .sort((a, b) => {
         if (!a.createdAt && !b.createdAt) return 0;
         if (!a.createdAt) return 1;

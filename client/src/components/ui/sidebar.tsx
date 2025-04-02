@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, PlusCircle, Search, Filter, User } from "lucide-react";
+import { LayoutDashboard, PlusCircle, Search, Filter } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,19 +11,16 @@ interface SidebarProps {
   categories: string[];
   selectedCategories: string[];
   onCategoryChange: (category: string) => void;
-  onAuthorSearch?: (author: string) => void;
 }
 
 export function Sidebar({ 
   className, 
   categories = [], 
   selectedCategories = [],
-  onCategoryChange,
-  onAuthorSearch
+  onCategoryChange 
 }: SidebarProps) {
   const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [authorSearchTerm, setAuthorSearchTerm] = useState('');
   const [showAllCategories, setShowAllCategories] = useState(false);
   
   const filteredCategories = searchTerm
@@ -57,7 +54,7 @@ export function Sidebar({
           <nav className="flex-1 px-2 space-y-1">
             {/* Dashboard Link */}
             <Link href="/">
-              <div className={cn(
+              <a className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
                 isActive("/") 
                   ? "bg-[#EEF3F8] text-[#0A66C2]" 
@@ -65,12 +62,12 @@ export function Sidebar({
               )}>
                 <LayoutDashboard className="mr-3 h-5 w-5" />
                 Dashboard
-              </div>
+              </a>
             </Link>
             
             {/* Import Posts Link */}
             <Link href="/import">
-              <div className={cn(
+              <a className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
                 isActive("/import") 
                   ? "bg-[#EEF3F8] text-[#0A66C2]" 
@@ -78,7 +75,7 @@ export function Sidebar({
               )}>
                 <PlusCircle className="mr-3 h-5 w-5 text-gray-400" />
                 Import Posts
-              </div>
+              </a>
             </Link>
           
             {/* Search Box */}
@@ -105,41 +102,6 @@ export function Sidebar({
               </div>
             </div>
             
-            {/* Author Search Section */}
-            <div className="pt-2 pb-1">
-              <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Search by Author
-              </h3>
-              <div className="mt-2 px-3">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <Input
-                    type="text"
-                    placeholder="Enter author name..."
-                    className="block w-full pl-10 pr-3 py-2"
-                    value={authorSearchTerm}
-                    onChange={(e) => setAuthorSearchTerm(e.target.value)}
-                  />
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    if (onAuthorSearch && authorSearchTerm.trim()) {
-                      console.log("Searching for author:", authorSearchTerm);
-                      onAuthorSearch(authorSearchTerm);
-                    }
-                  }}
-                  className="w-full mt-2"
-                  disabled={!authorSearchTerm.trim()}
-                >
-                  Search Authors
-                </Button>
-              </div>
-            </div>
-
             {/* Categories Section */}
             <div className="pt-2 pb-1">
               <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">

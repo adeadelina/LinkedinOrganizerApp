@@ -21,7 +21,6 @@ export default function Home() {
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [sortOrder, setSortOrder] = useState<string>("Most Recent");
-  const [selectedAuthor, setSelectedAuthor] = useState<string>("");
   
   // Create form with zod validation
   const form = useForm<{ url: string }>({
@@ -40,30 +39,13 @@ export default function Home() {
     queryKey: ["/api/posts"],
   });
 
-  // Fetch base categories from the backend
+  // Fetch all categories
   const { 
-    data: baseCategories = [], 
+    data: categories = [], 
     isLoading: isLoadingCategories 
   } = useQuery<string[]>({
     queryKey: ["/api/categories"],
   });
-  
-  // Extract all unique categories from posts, including those not in the default list
-  const allCategoriesFromPosts = posts.reduce((acc: string[], post) => {
-    if (post.categories && Array.isArray(post.categories)) {
-      post.categories.forEach(category => {
-        if (!acc.includes(category)) {
-          acc.push(category);
-        }
-      });
-    }
-    return acc;
-  }, []);
-  
-  // Combine base categories with any additional categories from posts
-  // Convert to array to avoid Set iteration issues
-  const combinedCategories = Array.from(new Set([...baseCategories, ...allCategoriesFromPosts]));
-  const categories = combinedCategories;
 
   // Mutation for analyzing a LinkedIn post
   const { mutate: analyzePost, isPending: isAnalyzing } = useMutation({
@@ -145,38 +127,22 @@ export default function Home() {
   const getMostRecentPost = () => {
     if (posts.length === 0) return [];
     
-    // Apply author filter first if one is selected
-    const authorFiltered = selectedAuthor
-      ? posts.filter(post => post.authorName && post.authorName.toLowerCase().includes(selectedAuthor.toLowerCase()))
-      : posts;
-    
-    if (authorFiltered.length === 0) return [];
-    
-    // Sort filtered posts by createdAt date
-    const sortedPosts = [...authorFiltered].sort((a, b) => {
+    // Sort all posts by createdAt date
+    const sortedAllPosts = [...posts].sort((a, b) => {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
     
     // Return only the most recent post
-    return [sortedPosts[0]];
+    return [sortedAllPosts[0]];
   };
   
   // Get the most recent post
   const mostRecentPost = getMostRecentPost();
   
-  // Log for debugging (minimal version)
-  console.log("Selected author:", selectedAuthor);
-  
-  // Filter posts by category and author - exclude the most recent post from this list
+  // Filter posts by category - exclude the most recent post from this list
   const filteredPosts = posts.filter((post) => {
     // Skip the most recent post since it's displayed separately
     if (mostRecentPost.length > 0 && post.id === mostRecentPost[0].id) return false;
-    
-    // Apply author filter if one is selected
-    if (selectedAuthor && (!post.authorName || !post.authorName.toLowerCase().includes(selectedAuthor.toLowerCase()))) {
-      console.log(`Author filter: ${selectedAuthor} - rejected post by ${post.authorName}`);
-      return false;
-    }
     
     // Apply category filter
     if (selectedCategory === "All Categories") return true;
@@ -194,34 +160,19 @@ export default function Home() {
     return 0;
   });
 
-  // Group posts by category for the categorized view - include the most recent post if it matches filter
+  // Group posts by category for the categorized view - exclude the most recent post
   const postsByCategory = categories.reduce((acc, category) => {
     const categoryPosts = posts.filter(post => 
+      // Skip the most recent post
+      (mostRecentPost.length === 0 || post.id !== mostRecentPost[0].id) &&
       // Include only completed posts with this category
-      post.categories?.includes(category) && 
-      post.processingStatus === "completed" &&
-      // Apply author filter if one is selected
-      (!selectedAuthor || (post.authorName && post.authorName.toLowerCase().includes(selectedAuthor.toLowerCase())))
+      post.categories?.includes(category) && post.processingStatus === "completed"
     );
-    
-    // Log for debugging
-    if (selectedAuthor && categoryPosts.length > 0) {
-      console.log(`Found ${categoryPosts.length} posts for category "${category}" by author "${selectedAuthor}"`);
-      console.log("Posts:", categoryPosts.map(p => ({ id: p.id, author: p.authorName, categories: p.categories })));
-    }
-    
     if (categoryPosts.length > 0) {
       acc[category] = categoryPosts;
     }
     return acc;
   }, {} as Record<string, Post[]>);
-  
-  // Debug info about categories
-  console.log("postsByCategory object:", Object.keys(postsByCategory));
-  console.log("All available categories:", categories);
-  console.log("Does 'Acquisition plays' exist in categories?", categories.includes("Acquisition plays"));
-  console.log("Does 'Acquisition plays' exist in postsByCategory?", "Acquisition plays" in postsByCategory);
-  console.log("Grant's post processing status:", posts.find(p => p.authorName && p.authorName.includes("Grant"))?.processingStatus);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
@@ -236,7 +187,6 @@ export default function Home() {
           categories={categories} 
           onCategoryChange={setSelectedCategory} 
           selectedCategories={selectedCategory === "All Categories" ? [] : [selectedCategory]}
-          onAuthorSearch={setSelectedAuthor}
         />
 
         {/* Main Content */}
@@ -290,22 +240,7 @@ export default function Home() {
                 {/* Results Section */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between px-6 py-5">
-                    <div>
-                      <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
-                      {selectedAuthor && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          Filtering by author: <span className="font-medium">{selectedAuthor}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-2 h-5 px-1" 
-                            onClick={() => setSelectedAuthor("")}
-                          >
-                            ✕
-                          </Button>
-                        </p>
-                      )}
-                    </div>
+                    <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
                     <div className="flex space-x-2">
                       <Select 
                         value={selectedCategory} 
@@ -350,23 +285,7 @@ export default function Home() {
                       <div className="p-6 text-center">Loading content...</div>
                     ) : mostRecentPost.length === 0 ? (
                       <div className="p-6 text-center text-gray-500">
-                        {selectedAuthor ? (
-                          <>
-                            No content found by author <span className="font-medium">{selectedAuthor}</span>.
-                            <br />
-                            <Button
-                              variant="link"
-                              className="mt-2 text-blue-600"
-                              onClick={() => setSelectedAuthor("")}
-                            >
-                              View all posts
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
-                          </>
-                        )}
+                        No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
                       </div>
                     ) : (
                       <div>
@@ -383,14 +302,7 @@ export default function Home() {
                   </CardContent>
                   
                   {/* Categories Section */}
-                  {selectedAuthor && Object.keys(postsByCategory).length === 0 ? (
-                    <CardContent className="border-t border-gray-200 px-6 py-5">
-                      <h2 className="text-lg font-medium text-gray-900 mb-4">Categories</h2>
-                      <div className="p-6 text-center text-gray-500">
-                        No categories with content from <span className="font-medium">{selectedAuthor}</span>.
-                      </div>
-                    </CardContent>
-                  ) : Object.keys(postsByCategory).length > 0 && (
+                  {Object.keys(postsByCategory).length > 0 && (
                     <CardContent className="border-t border-gray-200 px-6 py-5">
                       <h2 className="text-lg font-medium text-gray-900 mb-4">Categories</h2>
                       
