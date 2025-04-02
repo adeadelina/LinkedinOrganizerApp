@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { ZodError } from "zod";
-import { contentUrlSchema, insertPostSchema } from "@shared/schema";
+import { contentUrlSchema, insertPostSchema, MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { analyzePostContent, extractLinkedInPostInfo, extractSubstackInfo } from "./openai";
 
@@ -152,27 +152,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate the incoming data
-      const { categories } = req.body;
+      const { categories, newCategories } = req.body;
       
-      if (!categories || !Array.isArray(categories) || categories.length === 0) {
+      if ((!categories || !Array.isArray(categories) || categories.length === 0) && 
+          (!newCategories || !Array.isArray(newCategories) || newCategories.length === 0)) {
         return res.status(400).json({ error: "At least one category is required" });
       }
       
-      // Validate categories against available categories
-      const availableCategories = await storage.getAllCategories();
-      const invalidCategories = categories.filter(cat => !availableCategories.includes(cat));
+      let selectedCategories = [...(categories || [])];
       
-      if (invalidCategories.length > 0) {
+      // Process any new categories provided
+      if (newCategories && Array.isArray(newCategories) && newCategories.length > 0) {
+        // Add each new category to the system
+        for (const newCategory of newCategories) {
+          if (typeof newCategory === 'string' && newCategory.trim()) {
+            // Add to global categories list
+            await storage.addCategory(newCategory.trim());
+            // Add to the selected categories for this post if not already included
+            if (!selectedCategories.includes(newCategory.trim())) {
+              selectedCategories.push(newCategory.trim());
+            }
+          }
+        }
+      }
+      
+      // Enforce maximum categories limit
+      if (selectedCategories.length > MAX_CATEGORIES_PER_POST) {
         return res.status(400).json({ 
-          error: `Invalid categories: ${invalidCategories.join(', ')}`,
-          availableCategories
+          error: `Maximum of ${MAX_CATEGORIES_PER_POST} categories per post allowed`,
+          current: selectedCategories.length
         });
       }
       
       // Update the post with the new categories
-      const updatedPost = await storage.updatePost(postId, { categories });
+      const updatedPost = await storage.updatePost(postId, { categories: selectedCategories });
       
-      console.log(`[Post ${postId}] Categories manually updated to: ${categories.join(', ')}`);
+      console.log(`[Post ${postId}] Categories manually updated to: ${selectedCategories.join(', ')}`);
       
       return res.json(updatedPost);
     } catch (error) {

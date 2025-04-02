@@ -16,6 +16,7 @@ export interface IStorage {
   
   // Categories operations
   getAllCategories(): Promise<string[]>;
+  addCategory(category: string): Promise<string[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -127,6 +128,14 @@ export class MemStorage implements IStorage {
 
   // Categories operations
   async getAllCategories(): Promise<string[]> {
+    return categories;
+  }
+  
+  async addCategory(category: string): Promise<string[]> {
+    // Don't add if it already exists (case insensitive check)
+    if (!categories.some(c => c.toLowerCase() === category.toLowerCase())) {
+      categories.push(category);
+    }
     return categories;
   }
 }

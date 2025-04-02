@@ -17,7 +17,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Category definitions
-export const categories = [
+// Base categories provided by default
+export let categories = [
   "PLG Strategy",
   "Pricing experiments",
   "Onboarding",
@@ -27,6 +28,9 @@ export const categories = [
   "Coaching",
   "Free trial",
 ];
+
+// Maximum categories a post can have
+export const MAX_CATEGORIES_PER_POST = 10;
 
 // LinkedIn Post schema
 export const posts = pgTable("posts", {

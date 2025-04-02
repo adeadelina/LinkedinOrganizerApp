@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryFilter } from "@/components/category-filter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Edit, Eye, Loader2, X, Tag } from "lucide-react";
+import { Check, Edit, Eye, Loader2, X, Tag, Plus } from "lucide-react";
 import type { Post } from "@shared/schema";
+import { MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { 
   Dialog, 
@@ -82,13 +83,20 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
     }
   });
   
+  // State for new category input
+  const [newCategory, setNewCategory] = useState("");
+  const [newCategories, setNewCategories] = useState<string[]>([]);
+  
   // Mutation for updating post categories
   const updateCategoriesMutation = useMutation({
     mutationFn: async () => {
       return apiRequest(
         "POST",
         `/api/posts/${post.id}/update-categories`,
-        { categories: selectedCategories }
+        { 
+          categories: selectedCategories,
+          newCategories: newCategories 
+        }
       );
     },
     onSuccess: () => {
@@ -97,6 +105,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         description: "The post categories have been successfully updated.",
       });
       setIsCategoryDialogOpen(false);
+      setNewCategories([]);
+      // Refresh the categories list
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       if (onRefetch) onRefetch();
     },
     onError: (error) => {
@@ -462,6 +473,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                               id={`category-${category}`} 
                               checked={selectedCategories.includes(category)}
                               onCheckedChange={() => handleCategoryChange(category)}
+                              disabled={
+                                !selectedCategories.includes(category) && 
+                                selectedCategories.length >= MAX_CATEGORIES_PER_POST
+                              }
                             />
                             <label 
                               htmlFor={`category-${category}`}
@@ -474,6 +489,69 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                             )}
                           </div>
                         ))}
+
+                        {/* New categories section */}
+                        {newCategories.length > 0 && (
+                          <div className="mt-2 border-t pt-3">
+                            <h4 className="text-sm font-medium mb-2">Your new categories:</h4>
+                            {newCategories.map((category, index) => (
+                              <div key={`new-${index}`} className="flex items-center space-x-2 border rounded p-2 mb-2 bg-green-50">
+                                <Checkbox 
+                                  id={`category-new-${index}`} 
+                                  checked={selectedCategories.includes(category)}
+                                  onCheckedChange={() => handleCategoryChange(category)}
+                                  disabled={
+                                    !selectedCategories.includes(category) && 
+                                    selectedCategories.length >= MAX_CATEGORIES_PER_POST
+                                  }
+                                />
+                                <label 
+                                  htmlFor={`category-new-${index}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                                >
+                                  {category}
+                                </label>
+                                <Badge variant="outline" className="bg-green-100">New</Badge>
+                                {selectedCategories.includes(category) && (
+                                  <Badge variant="secondary" className="ml-1">Selected</Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Add new category input */}
+                      <div className="mt-4 mb-2">
+                        <h4 className="text-sm font-medium mb-2">Add a new category:</h4>
+                        <div className="flex gap-2">
+                          <Input
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="Enter new category"
+                            className="flex-1"
+                          />
+                          <Button 
+                            type="button" 
+                            size="sm"
+                            onClick={() => {
+                              if (newCategory.trim()) {
+                                // Add to new categories list
+                                setNewCategories(prev => [...prev, newCategory.trim()]);
+                                // Also select it
+                                if (selectedCategories.length < MAX_CATEGORIES_PER_POST) {
+                                  setSelectedCategories(prev => [...prev, newCategory.trim()]);
+                                }
+                                // Clear input
+                                setNewCategory('');
+                              }
+                            }}
+                            disabled={!newCategory.trim()}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
@@ -481,6 +559,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                           Selected categories: {selectedCategories.length ? 
                             selectedCategories.join(', ') : 
                             'None (please select at least one)'}
+                        </p>
+                        <p className="text-xs text-amber-800 mt-1">
+                          {selectedCategories.length}/{MAX_CATEGORIES_PER_POST} maximum categories used
                         </p>
                       </div>
                     </div>
@@ -491,6 +572,8 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                         size="sm"
                         onClick={() => {
                           setSelectedCategories(post.categories || []);
+                          setNewCategories([]);
+                          setNewCategory('');
                           setIsCategoryDialogOpen(false);
                         }}
                       >
