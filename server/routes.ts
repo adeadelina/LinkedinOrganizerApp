@@ -53,7 +53,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = contentUrlSchema.parse(req.body);
       const { url } = validatedData;
 
-      // Create a post with processing status
+      // Check if the URL already exists in the database
+      const allPosts = await storage.getAllPosts();
+      const existingPost = allPosts.find(post => post.url === url);
+
+      if (existingPost) {
+        // If URL already exists, return the existing post
+        console.log(`URL already exists in database: ${url}`);
+        return res.status(200).json({
+          message: "Content already exists",
+          postId: existingPost.id,
+          post: existingPost,
+          exists: true
+        });
+      }
+
+      // Create a post with processing status if it doesn't exist
       const newPost = await storage.createPost({
         url,
         authorName: "",
@@ -69,7 +84,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({ 
         message: "Content is being processed", 
         postId: newPost.id,
-        post: newPost
+        post: newPost,
+        exists: false
       });
 
       // Now continue processing asynchronously
