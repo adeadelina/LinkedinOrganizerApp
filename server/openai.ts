@@ -5,7 +5,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export interface CategoryAnalysisResult {
   categories: string[];
-  confidence: number;
+  confidence: number; // Will be converted to string when storing in database
   summary: string;
 }
 
@@ -20,13 +20,30 @@ export async function analyzePostContent(
   availableCategories: string[]
 ): Promise<CategoryAnalysisResult> {
   try {
+    // Ensure we have valid content to analyze
+    if (!content || content.trim().length < 10) {
+      throw new Error('Post content is too short or empty');
+    }
+    
+    // Ensure we have valid categories
+    if (!availableCategories || availableCategories.length === 0) {
+      throw new Error('No available categories provided for analysis');
+    }
+    
+    // Limit content length for the API call (OpenAI has token limits)
+    const truncatedContent = content.length > 8000 
+      ? content.substring(0, 8000) + '...' 
+      : content;
+    
+    console.log(`Analyzing content (${truncatedContent.length} chars) with OpenAI...`);
+    
     const prompt = `
       Analyze the following LinkedIn post and categorize it into 2-3 of the most relevant categories from this list:
       ${availableCategories.join(', ')}
       
       LinkedIn Post Content:
       """
-      ${content}
+      ${truncatedContent}
       """
       
       Provide your response in JSON format with the following properties:
@@ -35,25 +52,115 @@ export async function analyzePostContent(
       - summary: brief 1-2 sentence summary of the post content
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
-      max_tokens: 500
-    });
+    // Check if OpenAI API key is available
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('OpenAI API key not found, using basic categorization');
+      // Return basic categorization if no API key available
+      return generateBasicCategorization(content, availableCategories);
+    }
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    
-    return {
-      categories: result.categories || [],
-      confidence: Math.max(0, Math.min(1, result.confidence || 0.5)),
-      summary: result.summary || "No summary available"
-    };
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+        max_tokens: 500
+      });
+      
+      if (!response.choices || response.choices.length === 0 || !response.choices[0].message.content) {
+        throw new Error('Invalid response from OpenAI API');
+      }
+
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      
+      // Validate the result structure
+      if (!result.categories || !Array.isArray(result.categories)) {
+        throw new Error('Invalid categories in API response');
+      }
+      
+      return {
+        categories: result.categories.slice(0, 3) || [], // Ensure max 3 categories
+        confidence: Math.max(0, Math.min(1, result.confidence || 0.5)),
+        summary: result.summary || "No summary available"
+      };
+    } catch (openaiError: any) {
+      console.error("OpenAI API error:", openaiError);
+      // Fall back to basic categorization
+      console.warn('Using fallback categorization method');
+      return generateBasicCategorization(content, availableCategories);
+    }
   } catch (error: any) {
     console.error("Error analyzing post content:", error);
     throw new Error(`Failed to analyze content: ${error.message || 'Unknown error'}`);
   }
+}
+
+/**
+ * Generate a basic categorization for content when OpenAI is unavailable
+ * Uses keyword matching for simple categorization
+ */
+function generateBasicCategorization(
+  content: string, 
+  availableCategories: string[]
+): CategoryAnalysisResult {
+  const contentLower = content.toLowerCase();
+  const categoryMatches = new Map<string, number>();
+  
+  // Define keywords for each category
+  const categoryKeywords: Record<string, string[]> = {
+    'PLG Strategy': ['plg', 'product led growth', 'self-serve', 'user adoption', 'acquisition'],
+    'Pricing experiments': ['pricing', 'monetize', 'revenue', 'subscription', 'tier', 'freemium'],
+    'Onboarding': ['onboard', 'tutorial', 'first-time', 'user experience', 'activation'],
+    'Stakeholder management': ['stakeholder', 'leadership', 'management', 'team', 'collaboration'],
+    'AI tools for PM': ['ai', 'artificial intelligence', 'machine learning', 'automation', 'product manager'],
+    'Communication': ['communicate', 'message', 'clarity', 'articulate', 'presentation'],
+    'Coaching': ['coach', 'mentor', 'develop', 'growth', 'career', 'feedback'],
+    'Free trial': ['trial', 'free', 'demo', 'test drive', 'try before buy']
+  };
+  
+  // Count keyword occurrences for each category
+  availableCategories.forEach(category => {
+    const keywords = categoryKeywords[category] || [category.toLowerCase()];
+    let count = 0;
+    
+    keywords.forEach(keyword => {
+      // Count occurrences of each keyword
+      const regex = new RegExp('\\b' + keyword + '\\b', 'gi');
+      const matches = contentLower.match(regex);
+      if (matches) {
+        count += matches.length;
+      }
+    });
+    
+    categoryMatches.set(category, count);
+  });
+  
+  // Convert Map to array and sort by match count
+  const categoryArray: [string, number][] = [];
+  categoryMatches.forEach((count, category) => {
+    categoryArray.push([category, count]);
+  });
+  
+  // Sort by count (descending)
+  categoryArray.sort((a, b) => b[1] - a[1]);
+  
+  // Extract top 3 categories
+  const sortedCategories = categoryArray
+    .map(entry => entry[0])
+    .slice(0, 3);
+  
+  // Create a simple summary
+  const firstSentence = content.split(/[.!?]/).filter(s => s.trim().length > 0)[0] || '';
+  const summary = firstSentence.length > 100 
+    ? firstSentence.substring(0, 100) + '...' 
+    : firstSentence;
+  
+  return {
+    categories: sortedCategories.length > 0 ? sortedCategories : [availableCategories[0]],
+    confidence: 0.5, // Medium confidence for keyword-based approach
+    summary: summary || 'Post about professional development'
+  };
 }
 
 /**
@@ -67,12 +174,36 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
   content: string;
   publishedDate: Date;
 }> {
+  // Input validation
+  if (!url || !url.trim()) {
+    throw new Error('LinkedIn URL is required');
+  }
+  
+  // Basic URL validation
+  if (!url.includes('linkedin.com')) {
+    throw new Error('URL must be from LinkedIn (linkedin.com)');
+  }
+  
+  // Check if ZenRows API key is available
+  if (!process.env.ZENROWS_API_KEY) {
+    throw new Error('ZenRows API key is not configured. Please add it to your environment variables.');
+  }
+  
+  console.log(`Extracting information from LinkedIn URL: ${url}`);
+  
   // Import the ZenRows scraper here to avoid circular dependencies
   const { scrapeLinkedInPost } = await import('./zenrows');
   
   try {
     // Use ZenRows API to extract real LinkedIn post data
     const extractedData = await scrapeLinkedInPost(url);
+    
+    // Validate extracted data
+    if (!extractedData.content || extractedData.content.trim().length === 0) {
+      throw new Error('No content could be extracted from the LinkedIn post');
+    }
+    
+    console.log(`Successfully extracted LinkedIn post content (${extractedData.content.length} chars)`);
     
     return {
       authorName: extractedData.authorName,
@@ -82,6 +213,22 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
     };
   } catch (error: any) {
     console.error("Error extracting post info:", error);
+    
+    // More descriptive error message based on the type of error
+    if (error.message?.includes('API key')) {
+      throw new Error('ZenRows API key is invalid or has expired. Please update your API key.');
+    } else if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+      throw new Error('Rate limit exceeded for ZenRows API. Please try again later.');
+    } else if (error.message?.includes('400') || error.message?.includes('Bad Request')) {
+      throw new Error('The URL format is invalid or not supported. Please check the LinkedIn URL.');
+    } else if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+      throw new Error('Access to this LinkedIn content is restricted or requires authentication.');
+    } else if (error.message?.includes('500') || error.message?.includes('Internal Server')) {
+      throw new Error('ZenRows service is experiencing issues. Please try again later.');
+    } else if (error.message?.includes('content')) {
+      throw new Error('Could not extract content from the LinkedIn post. The post might be private or requires authentication.');
+    }
+    
     throw new Error(`Failed to extract LinkedIn post info: ${error.message || 'Unknown error'}`);
   }
 }

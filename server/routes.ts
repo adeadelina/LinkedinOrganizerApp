@@ -102,32 +102,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 // Helper function to process a LinkedIn post in the background
 async function processLinkedInPost(postId: number, url: string): Promise<void> {
+  console.log(`Starting to process LinkedIn post ${postId} with URL: ${url}`);
+  
   try {
-    // 1. Extract information from the LinkedIn post
-    const extractedInfo = await extractLinkedInPostInfo(url);
-    
-    // Update the post with extracted information
+    // Update the post initially with more detailed processing status
     await storage.updatePost(postId, {
-      authorName: extractedInfo.authorName,
-      authorImage: extractedInfo.authorImage,
-      content: extractedInfo.content,
-      publishedDate: extractedInfo.publishedDate
+      processingStatus: "extracting",
+      processError: null
     });
+    
+    // 1. Extract information from the LinkedIn post
+    console.log(`[Post ${postId}] Extracting information from LinkedIn URL`);
+    let extractedInfo;
+    
+    try {
+      extractedInfo = await extractLinkedInPostInfo(url);
+      
+      if (!extractedInfo.content || extractedInfo.content.trim().length === 0) {
+        throw new Error('No content was extracted from the LinkedIn post');
+      }
+      
+      // Update the post with extracted information
+      await storage.updatePost(postId, {
+        authorName: extractedInfo.authorName || 'LinkedIn User',
+        authorImage: extractedInfo.authorImage || '',
+        content: extractedInfo.content,
+        publishedDate: extractedInfo.publishedDate || new Date(),
+        processingStatus: "analyzing"
+      });
+      
+      console.log(`[Post ${postId}] Successfully extracted content (${extractedInfo.content.length} characters)`);
+    } catch (extractError: any) {
+      console.error(`[Post ${postId}] Extraction error:`, extractError);
+      await storage.updatePost(postId, {
+        processingStatus: "failed",
+        processError: `Extraction failed: ${extractError.message || 'Unknown error'}`
+      });
+      return; // Early exit if extraction fails
+    }
 
     // 2. Analyze the content and categorize it
-    const categories = await storage.getAllCategories();
-    const analysis = await analyzePostContent(extractedInfo.content, categories);
+    console.log(`[Post ${postId}] Analyzing and categorizing content`);
+    try {
+      const categories = await storage.getAllCategories();
+      const analysis = await analyzePostContent(extractedInfo.content, categories);
+      
+      if (!analysis.categories || analysis.categories.length === 0) {
+        throw new Error('No categories were assigned to the post content');
+      }
+      
+      // 3. Update the post with categories and set status to completed
+      await storage.updatePost(postId, {
+        categories: analysis.categories,
+        summary: analysis.summary,
+        confidence: analysis.confidence.toString(), // Convert number to string
+        processingStatus: "completed",
+        processError: null
+      });
+      
+      console.log(`[Post ${postId}] Successfully analyzed and categorized into: ${analysis.categories.join(', ')}`);
+    } catch (analysisError: any) {
+      console.error(`[Post ${postId}] Analysis error:`, analysisError);
+      // Still keep the extracted content but mark analysis as failed
+      await storage.updatePost(postId, {
+        processingStatus: "failed",
+        processError: `Analysis failed: ${analysisError.message || 'Unknown error'}`
+      });
+    }
+  } catch (error: any) {
+    console.error(`[Post ${postId}] General processing error:`, error);
     
-    // 3. Update the post with categories and set status to completed
-    await storage.updatePost(postId, {
-      categories: analysis.categories,
-      processingStatus: "completed"
-    });
+    // Determine the type of error for better user feedback
+    let errorMessage = 'Unknown error occurred';
     
-  } catch (error) {
-    console.error(`Error processing post ${postId}:`, error);
+    if (error.message) {
+      if (error.message.includes('API key')) {
+        errorMessage = 'API key error: Please check your API configuration';
+      } else if (error.message.includes('rate limit') || error.message.includes('429')) {
+        errorMessage = 'Rate limit exceeded: Please try again later';
+      } else if (error.message.toLowerCase().includes('network') || error.message.toLowerCase().includes('timeout')) {
+        errorMessage = 'Network error: Please check your internet connection';
+      } else if (error.message.toLowerCase().includes('url') || error.message.toLowerCase().includes('linkedin')) {
+        errorMessage = 'URL error: The LinkedIn URL may be invalid or inaccessible';
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+    }
+    
     await storage.updatePost(postId, {
-      processingStatus: "failed"
+      processingStatus: "failed",
+      processError: errorMessage
     });
   }
 }

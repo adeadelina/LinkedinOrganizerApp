@@ -87,6 +87,9 @@ export class MemStorage implements IStorage {
       content: insertPost.content || null,
       publishedDate: insertPost.publishedDate || null,
       categories: insertPost.categories || null,
+      summary: insertPost.summary || null,
+      confidence: insertPost.confidence || null,
+      processError: insertPost.processError || null,
       processingStatus: insertPost.processingStatus || "processing",
       createdAt
     };
@@ -108,6 +111,9 @@ export class MemStorage implements IStorage {
       content: postUpdate.content !== undefined ? postUpdate.content : post.content,
       publishedDate: postUpdate.publishedDate !== undefined ? postUpdate.publishedDate : post.publishedDate,
       categories: postUpdate.categories !== undefined ? postUpdate.categories : post.categories,
+      summary: postUpdate.summary !== undefined ? postUpdate.summary : post.summary,
+      confidence: postUpdate.confidence !== undefined ? postUpdate.confidence : post.confidence,
+      processError: postUpdate.processError !== undefined ? postUpdate.processError : post.processError,
       processingStatus: postUpdate.processingStatus !== undefined ? postUpdate.processingStatus : post.processingStatus
     };
     

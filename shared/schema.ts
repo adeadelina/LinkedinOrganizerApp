@@ -37,7 +37,10 @@ export const posts = pgTable("posts", {
   content: text("content"),
   publishedDate: timestamp("published_date"),
   categories: text("categories").array(),
-  processingStatus: text("processing_status").notNull().default("processing"), // 'processing', 'completed', 'failed'
+  summary: text("summary"), // Brief summary of the post content
+  confidence: text("confidence"), // Confidence level in categorization (0-1) as string
+  processError: text("process_error"), // Error message if processing failed
+  processingStatus: text("processing_status").notNull().default("processing"), // 'processing', 'extracting', 'analyzing', 'completed', 'failed'
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -48,6 +51,9 @@ export const insertPostSchema = createInsertSchema(posts).pick({
   content: true,
   publishedDate: true,
   categories: true,
+  summary: true,
+  confidence: true,
+  processError: true,
   processingStatus: true,
 });
 
