@@ -41,7 +41,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   
   // Fetch available categories
-  const { data: availableCategories = [] } = useQuery({
+  const { data: availableCategories = [] } = useQuery<string[]>({
     queryKey: ['/api/categories'],
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -423,9 +423,16 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           {!isProcessing && !isFailed && (
             <div className="mt-4 flex justify-between">
               <div className="flex items-center text-gray-500 text-xs flex-wrap gap-1">
-                {post.categories?.map((category) => (
-                  <CategoryFilter key={category} category={category} />
-                ))}
+                {post.categories && post.categories.length > 0 ? (
+                  post.categories.map((category) => (
+                    <CategoryFilter key={category} category={category} />
+                  ))
+                ) : (
+                  <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                    <Tag className="h-3 w-3 mr-1" />
+                    Categories needed
+                  </div>
+                )}
               </div>
               <div className="flex space-x-2">
                 {/* Category Management Dialog */}
@@ -437,7 +444,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                       className="text-xs"
                     >
                       <Tag className="h-3.5 w-3.5 mr-1" />
-                      Categories
+                      {post.categories?.length === 0 ? "Assign Categories" : "Edit Categories"}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
@@ -449,7 +456,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                     </DialogHeader>
                     <div className="py-4">
                       <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto p-2">
-                        {availableCategories.map((category) => (
+                        {availableCategories.map((category: string) => (
                           <div key={category} className="flex items-center space-x-2 border rounded p-2">
                             <Checkbox 
                               id={`category-${category}`} 
