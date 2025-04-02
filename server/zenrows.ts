@@ -117,15 +117,71 @@ export async function scrapeLinkedInPost(url: string): Promise<{
       console.log('Sample response:', sampleText);
     }
     
-    // Check if response is from custom_js (object with structured data)
+    // Check if response is from custom_js or autoparse (object with structured data)
     if (typeof responseData === 'object' && responseData !== null) {
-      console.log('Processing object response from custom_js extraction');
+      console.log('Processing object response from ZenRows API');
       
       // Check if there was an error in the custom JS
       if (responseData.error) {
-        console.error(`Error in custom JS extraction: ${responseData.error}`);
+        console.error(`Error in extraction: ${responseData.error}`);
       }
       
+      // Try to extract data from Schema.org format (autoparse=true response)
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        console.log('Processing autoparse array response');
+        const schemaData = responseData[0];
+        
+        // Extract author information from schema
+        let authorName = 'LinkedIn User';
+        let authorImage = '';
+        
+        // Find author from potential schema locations
+        if (schemaData.author && schemaData.author['@type'] === 'Person') {
+          authorName = schemaData.author.name || authorName;
+          authorImage = schemaData.author.image || authorImage;
+        }
+        
+        // Find content from schema - check multiple potential fields
+        let content = '';
+        if (schemaData.text) {
+          content = schemaData.text;
+        } else if (schemaData.articleBody) {
+          content = schemaData.articleBody;
+        } else if (schemaData.description) {
+          content = schemaData.description;
+        } else if (schemaData.headline) {
+          content = schemaData.headline;
+        } else if (schemaData.comment && Array.isArray(schemaData.comment) && schemaData.comment.length > 0) {
+          // If we have comments, extract the first comment's text as content
+          content = schemaData.comment[0].text || '';
+        }
+        
+        if (!content || content.length < 10) {
+          console.log('No meaningful content found in schema data');
+          content = 'No content available';
+        }
+        
+        // Extract date if available
+        let publishedDate = new Date();
+        if (schemaData.datePublished) {
+          try {
+            publishedDate = new Date(schemaData.datePublished);
+          } catch (error) {
+            console.error(`Error parsing date: ${error}`);
+          }
+        }
+        
+        console.log(`Extracted from schema: Author: "${authorName}", Content length: ${content.length}`);
+        
+        return {
+          authorName,
+          authorImage,
+          content,
+          publishedDate
+        };
+      }
+      
+      // Regular custom_js response format
       const authorName = responseData.authorName || 'LinkedIn User';
       const authorImage = responseData.authorImage || '';
       const content = responseData.content || 'No content available';
