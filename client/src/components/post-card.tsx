@@ -61,11 +61,14 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const updateCategoriesMutation = useMutation({
     mutationFn: async () => {
       return apiRequest(
-        "POST",
         `/api/posts/${post.id}/update-categories`,
         { 
-          categories: selectedCategories,
-          newCategories: newCategories 
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categories: selectedCategories,
+            newCategories: newCategories 
+          })
         }
       );
     },
