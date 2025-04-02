@@ -64,14 +64,22 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   // Mutation for updating post categories
   const updateCategoriesMutation = useMutation({
     mutationFn: async () => {
+      // Deduplicate before sending to server
+      const uniqueSelectedCategories = selectedCategories.filter((category, index, self) => 
+        self.indexOf(category) === index
+      );
+      const uniqueNewCategories = newCategories.filter((category, index, self) => 
+        self.indexOf(category) === index
+      );
+      
       return apiRequest(
         `/api/posts/${post.id}/update-categories`,
         { 
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            categories: selectedCategories,
-            newCategories: newCategories 
+            categories: uniqueSelectedCategories,
+            newCategories: uniqueNewCategories 
           })
         }
       );
@@ -197,7 +205,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               </div>
               {!isProcessing && !isFailed && (
                 <div className="flex flex-wrap gap-1">
-                  {post.categories?.slice(0, 2).map((category) => (
+                  {/* Deduplicate categories before mapping */}
+                  {(post.categories || []).filter((category, index, self) => 
+                    self.indexOf(category) === index
+                  ).slice(0, 2).map((category) => (
                     <CategoryFilter 
                       key={category} 
                       category={category} 
@@ -311,7 +322,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           <div className="mt-4 flex justify-between">
             <div className="flex items-center text-gray-500 text-xs flex-wrap gap-1">
               {post.categories && post.categories.length > 0 ? (
-                post.categories.map((category) => (
+                // Remove duplicate categories
+                post.categories.filter((category, index, self) => 
+                  self.indexOf(category) === index
+                ).map((category) => (
                   <CategoryFilter 
                     key={category} 
                     category={category}

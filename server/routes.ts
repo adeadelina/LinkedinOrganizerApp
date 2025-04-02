@@ -159,26 +159,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "At least one category is required" });
       }
       
-      let selectedCategories = [...(categories || [])];
+      // Start with existing categories and deduplicate
+      let selectedCategories = (categories || []).filter((category, index, self) => 
+        self.indexOf(category) === index
+      );
       
       // Process any new categories provided
       if (newCategories && Array.isArray(newCategories) && newCategories.length > 0) {
+        // Deduplicate new categories
+        const uniqueNewCategories = newCategories
+          .filter(cat => typeof cat === 'string' && cat.trim() !== '')
+          .map(cat => cat.trim())
+          .filter((category, index, self) => self.indexOf(category) === index);
+        
         // Add each new category to the system
-        for (const newCategory of newCategories) {
-          if (typeof newCategory === 'string' && newCategory.trim()) {
-            console.log(`Adding new category: "${newCategory.trim()}"`);
-            // Add to global categories list
-            const updatedCategories = await storage.addCategory(newCategory.trim());
-            console.log(`Global categories after adding "${newCategory.trim()}":`, updatedCategories);
-            
-            // Add to the selected categories for this post if not already included
-            if (!selectedCategories.includes(newCategory.trim())) {
-              selectedCategories.push(newCategory.trim());
-              console.log(`Added "${newCategory.trim()}" to post's selected categories:`, selectedCategories);
-            }
+        for (const newCategory of uniqueNewCategories) {
+          console.log(`Adding new category: "${newCategory}"`);
+          // Add to global categories list
+          const updatedCategories = await storage.addCategory(newCategory);
+          console.log(`Global categories after adding "${newCategory}":`, updatedCategories);
+          
+          // Add to the selected categories for this post if not already included
+          if (!selectedCategories.includes(newCategory)) {
+            selectedCategories.push(newCategory);
+            console.log(`Added "${newCategory}" to post's selected categories:`, selectedCategories);
           }
         }
       }
+      
+      // Final deduplication step for safety
+      selectedCategories = selectedCategories.filter((category, index, self) => 
+        self.indexOf(category) === index
+      );
       
       // Enforce maximum categories limit
       if (selectedCategories.length > MAX_CATEGORIES_PER_POST) {
