@@ -85,6 +85,35 @@ export async function scrapeLinkedInPost(url: string): Promise<{
     };
   } catch (error: any) {
     console.error('Error scraping LinkedIn post:', error);
+    
+    // Extract the error response if it exists
+    const zenRowsError = error?.response?.data;
+    
+    if (zenRowsError) {
+      const errorCode = zenRowsError.code;
+      const errorTitle = zenRowsError.title;
+      const errorStatus = zenRowsError.status;
+      
+      // Create a more descriptive error message based on ZenRows error code
+      // Reference: https://docs.zenrows.com/api-error-codes
+      if (errorCode === 'RESP001') {
+        throw new Error(`Failed to scrape LinkedIn post: Content extraction failed (code: ${errorCode}). This post might be protected or require authentication.`);
+      } else if (errorCode === 'RESP002') {
+        throw new Error(`Failed to scrape LinkedIn post: Request timed out (code: ${errorCode}). LinkedIn page took too long to load.`);
+      } else if (errorCode === 'RESP003') {
+        throw new Error(`Failed to scrape LinkedIn post: JS rendering error (code: ${errorCode}). Try disabling JavaScript rendering.`);
+      } else if (errorCode === 'API001') {
+        throw new Error(`Failed to scrape LinkedIn post: Invalid API key (code: ${errorCode}). Please update your ZenRows API key.`);
+      } else if (errorCode === 'API002') {
+        throw new Error(`Failed to scrape LinkedIn post: Rate limit exceeded (code: ${errorCode}). Please try again later.`);
+      } else if (errorCode === 'API003') {
+        throw new Error(`Failed to scrape LinkedIn post: Usage limit reached (code: ${errorCode}). Please upgrade your ZenRows plan.`);
+      } else {
+        throw new Error(`Failed to scrape LinkedIn post: ${errorTitle || 'Unknown error'} (code: ${errorCode}, status: ${errorStatus})`);
+      }
+    }
+    
+    // If we can't extract the ZenRows error, use the generic error message
     throw new Error(`Failed to scrape LinkedIn post: ${error.message || 'Unknown error'}`);
   }
 }

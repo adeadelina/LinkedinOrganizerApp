@@ -90,7 +90,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           <div className="ml-5 flex-shrink-0 flex items-center space-x-4">
             <div className="flex items-center">
               <div className="h-2 w-2 bg-[#0A66C2] rounded-full animate-pulse mr-2"></div>
-              <span className="text-sm text-gray-500">Processing post content...</span>
+              <span className="text-sm text-gray-500">
+                {post.processingStatus === "extracting" ? "Extracting post content from LinkedIn..." : "Processing post content..."}
+              </span>
             </div>
           </div>
         ) : isFailed ? (
@@ -104,7 +106,20 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800">Processing failed</h3>
                 <div className="mt-2 text-sm text-red-700">
-                  <p>There was an error processing this LinkedIn post. Please try again or check the URL.</p>
+                  {post.processError?.includes('422') ? (
+                    <p>LinkedIn API extraction failed. This could be due to content protection or API limitations. Please try a different LinkedIn post.</p>
+                  ) : post.processError?.includes('429') ? (
+                    <p>Rate limit exceeded. Please wait a moment and try again.</p>
+                  ) : post.processError?.includes('authentication') ? (
+                    <p>This LinkedIn post requires authentication or is private. Please try a public post instead.</p>
+                  ) : post.processError?.includes('URL') ? (
+                    <p>The LinkedIn URL format is invalid or not supported. Please check the URL and try again.</p>
+                  ) : (
+                    <p>There was an error processing this LinkedIn post: {post.processError || "Unknown error"}</p>
+                  )}
+                  <div className="mt-2 text-xs">
+                    <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View original post on LinkedIn</a>
+                  </div>
                 </div>
               </div>
             </div>

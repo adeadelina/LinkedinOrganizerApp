@@ -214,21 +214,34 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
   } catch (error: any) {
     console.error("Error extracting post info:", error);
     
-    // More descriptive error message based on the type of error
-    if (error.message?.includes('API key')) {
+    // More descriptive error message based on the error details
+    if (error.message?.includes('API key') || error.message?.includes('API001')) {
       throw new Error('ZenRows API key is invalid or has expired. Please update your API key.');
-    } else if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+    } else if (error.message?.includes('429') || error.message?.includes('Too Many Requests') || error.message?.includes('API002')) {
       throw new Error('Rate limit exceeded for ZenRows API. Please try again later.');
-    } else if (error.message?.includes('400') || error.message?.includes('Bad Request')) {
-      throw new Error('The URL format is invalid or not supported. Please check the LinkedIn URL.');
+    } else if (error.message?.includes('API003')) {
+      throw new Error('Usage limit reached for ZenRows API. Please upgrade your plan or try again later.');
+    } else if (error.message?.includes('RESP001') || error.message?.includes('protected') || error.message?.includes('authentication')) {
+      throw new Error('The LinkedIn post content is protected or requires authentication. Try a different public post.');
+    } else if (error.message?.includes('RESP002')) {
+      throw new Error('The LinkedIn page took too long to load. The network might be slow or the page is too complex.');
+    } else if (error.message?.includes('RESP003')) {
+      throw new Error('JavaScript rendering error occurred. LinkedIn might have updated their page structure.');
+    } else if (error.message?.includes('400') || error.message?.includes('Bad Request') || error.message?.includes('URL')) {
+      throw new Error('The LinkedIn URL format is invalid or not supported. Please check the URL structure.');
     } else if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
       throw new Error('Access to this LinkedIn content is restricted or requires authentication.');
     } else if (error.message?.includes('500') || error.message?.includes('Internal Server')) {
       throw new Error('ZenRows service is experiencing issues. Please try again later.');
     } else if (error.message?.includes('content')) {
-      throw new Error('Could not extract content from the LinkedIn post. The post might be private or requires authentication.');
+      throw new Error('Could not extract content from the LinkedIn post. The post might be private or contain unsupported content.');
+    } else if (error.message?.includes('timeout') || error.message?.includes('ETIMEDOUT')) {
+      throw new Error('The request to ZenRows API timed out. The network might be slow or the service is busy.');
+    } else if (error.message?.includes('ECONNREFUSED') || error.message?.includes('connect')) {
+      throw new Error('Could not connect to ZenRows API. The service might be down or blocked by network settings.');
     }
     
+    // If no specific error is identified, use the original error message
     throw new Error(`Failed to extract LinkedIn post info: ${error.message || 'Unknown error'}`);
   }
 }
