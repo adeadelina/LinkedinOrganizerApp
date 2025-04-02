@@ -5,12 +5,21 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
+  name: text("name"),
+  email: text("email").unique(),
+  googleId: text("google_id").unique(),
+  picture: text("picture"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  name: true,
+  email: true,
+  googleId: true,
+  picture: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

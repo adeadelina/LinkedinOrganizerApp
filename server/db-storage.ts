@@ -32,8 +32,65 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email));
+    return result[0];
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.googleId, googleId));
+    return result[0];
+  }
+
+  async createUser(userData: Partial<InsertUser>): Promise<User> {
+    // Make sure we have a username
+    if (!userData.username) {
+      throw new Error("Username is required to create a user");
+    }
+    
+    // Add createdAt date
+    const createdAt = new Date();
+
+    // Create the user with the proper shape required by Drizzle
+    const result = await db.insert(users).values({
+      username: userData.username,
+      password: userData.password || null,
+      name: userData.name || null,
+      email: userData.email || null,
+      googleId: userData.googleId || null,
+      picture: userData.picture || null,
+      createdAt
+    }).returning();
+    
+    return result[0];
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    // First get the existing user
+    const existingUser = await this.getUser(id);
+    if (!existingUser) return undefined;
+    
+    // Create an object with only the fields to update
+    const updates: Record<string, any> = {};
+    
+    if (userData.username !== undefined) updates.username = userData.username;
+    if (userData.password !== undefined) updates.password = userData.password;
+    if (userData.name !== undefined) updates.name = userData.name;
+    if (userData.email !== undefined) updates.email = userData.email;
+    if (userData.googleId !== undefined) updates.googleId = userData.googleId;
+    if (userData.picture !== undefined) updates.picture = userData.picture;
+    
+    // If there are no updates, just return the existing user
+    if (Object.keys(updates).length === 0) {
+      return existingUser;
+    }
+    
+    const result = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    
     return result[0];
   }
 

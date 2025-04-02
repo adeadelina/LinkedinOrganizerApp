@@ -2,9 +2,13 @@ import { categories, type User, type InsertUser, type Post, type InsertPost } fr
 
 // Storage interface for CRUD operations
 export interface IStorage {
+  // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  createUser(user: Partial<InsertUser>): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   
   // Post operations
   getAllPosts(): Promise<Post[]>;
@@ -43,11 +47,51 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.googleId === googleId,
+    );
+  }
+
+  async createUser(userData: Partial<InsertUser>): Promise<User> {
     const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
+    const createdAt = new Date();
+    const user: User = {
+      id,
+      username: userData.username || `user_${id}`,
+      password: userData.password || null,
+      name: userData.name || null,
+      email: userData.email || null,
+      googleId: userData.googleId || null,
+      picture: userData.picture || null,
+      createdAt,
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser: User = {
+      ...user,
+      username: userData.username !== undefined ? userData.username : user.username,
+      password: userData.password !== undefined ? userData.password : user.password,
+      name: userData.name !== undefined ? userData.name : user.name,
+      email: userData.email !== undefined ? userData.email : user.email,
+      googleId: userData.googleId !== undefined ? userData.googleId : user.googleId,
+      picture: userData.picture !== undefined ? userData.picture : user.picture,
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   // Post operations
