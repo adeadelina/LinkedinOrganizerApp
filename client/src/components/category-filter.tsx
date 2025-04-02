@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 interface CategoryFilterProps {
   category: string;
   className?: string;
-  onClick?: () => void;
+  onClick?: (selected: boolean) => void;
+  onRemove?: () => void;
   isSelected?: boolean;
 }
 
@@ -63,7 +64,7 @@ export function CategoryFilter({ category, className, onClick, isSelected = fals
         onClick && "cursor-pointer hover:opacity-90 transition-opacity",
         className
       )}
-      onClick={onClick}
+      onClick={() => onClick?.(!isSelected)}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
