@@ -251,19 +251,29 @@ export function registerAuthRoutes(app: Express): void {
     })(req, res, next);
   });
 
-  // Google authentication routes
-  app.get("/api/auth/google", passport.authenticate("google"));
-  
-  app.get(
-    "/api/auth/google/callback",
-    passport.authenticate("google", {
-      failureRedirect: "/login",
-    }),
-    (req, res) => {
-      // Successful authentication, redirect to home page
-      res.redirect("/");
-    }
-  );
+  // Google authentication routes - only register if Google OAuth is configured
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    app.get("/api/auth/google", passport.authenticate("google"));
+    
+    app.get(
+      "/api/auth/google/callback",
+      passport.authenticate("google", {
+        failureRedirect: "/login",
+      }),
+      (req, res) => {
+        // Successful authentication, redirect to home page
+        res.redirect("/");
+      }
+    );
+  } else {
+    // Provide informative error if Google OAuth is not configured
+    app.get("/api/auth/google", (req, res) => {
+      res.status(501).json({ 
+        error: "Google OAuth is not configured", 
+        message: "Google authentication is not available. Please use username and password to login."
+      });
+    });
+  }
 
   // Get currently authenticated user
   app.get("/api/auth/user", (req: Request, res: Response) => {
