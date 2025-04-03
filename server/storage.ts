@@ -190,14 +190,20 @@ export class MemStorage implements IStorage {
     if (index !== -1) {
       // Remove the category
       categories.splice(index, 1);
-      
-      // Also remove this category from all posts
-      Array.from(this.posts.values()).forEach(post => {
-        if (post.categories && post.categories.includes(category)) {
-          post.categories = post.categories.filter((c: string) => c !== category);
-        }
-      });
+      console.log(`Category "${category}" deleted. Updated categories:`, categories);
+    } else {
+      console.log(`Category "${category}" not found in default categories, but will still be removed from all posts.`);
     }
+    
+    // Always update all posts to remove this category, even if it wasn't in the official list
+    // This handles edge cases like test categories or categories that were removed from the default list
+    Array.from(this.posts.values()).forEach(post => {
+      if (post.categories && post.categories.includes(category)) {
+        post.categories = post.categories.filter((c: string) => c !== category);
+        console.log(`Removed category "${category}" from post ${post.id}`);
+      }
+    });
+    
     return categories;
   }
 }

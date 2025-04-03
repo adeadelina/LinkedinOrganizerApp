@@ -160,15 +160,19 @@ export class DbStorage implements IStorage {
       // Remove the category from the list
       defaultCategories.splice(index, 1);
       console.log(`Category "${category}" deleted. Updated categories:`, defaultCategories);
-      
-      // Also update all posts to remove this category
-      const allPosts = await this.getAllPosts();
-      for (const post of allPosts) {
-        if (post.categories && post.categories.includes(category)) {
-          // Remove the category from the post
-          const updatedCategories = post.categories.filter(c => c !== category);
-          await this.updatePost(post.id, { categories: updatedCategories });
-        }
+    } else {
+      console.log(`Category "${category}" not found in default categories, but will still be removed from all posts.`);
+    }
+    
+    // Always update all posts to remove this category, even if it wasn't in the default list
+    // This handles edge cases like test categories or categories that were removed from the default list
+    const allPosts = await this.getAllPosts();
+    for (const post of allPosts) {
+      if (post.categories && post.categories.includes(category)) {
+        // Remove the category from the post
+        const updatedCategories = post.categories.filter(c => c !== category);
+        await this.updatePost(post.id, { categories: updatedCategories });
+        console.log(`Removed category "${category}" from post ${post.id}`);
       }
     }
     
