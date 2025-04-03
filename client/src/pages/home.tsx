@@ -151,7 +151,10 @@ export default function Home() {
       // Check if the post has at least one of the selected categories
       return post.categories && 
              Array.isArray(post.categories) && 
-             selectedCategories.some(category => post.categories?.includes(category) ?? false);
+             // Make sure we're only checking against valid categories
+             selectedCategories
+               .filter(cat => categories.includes(cat))
+               .some(category => post.categories?.includes(category) ?? false);
     });
     
     if (eligiblePosts.length === 0) return [];
@@ -182,7 +185,10 @@ export default function Home() {
     // Check if the post has at least one of the selected categories
     return post.categories && 
            Array.isArray(post.categories) && 
-           selectedCategories.some(category => post.categories?.includes(category) ?? false);
+           // Make sure we're only checking against valid categories
+           selectedCategories
+             .filter(cat => categories.includes(cat))
+             .some(category => post.categories?.includes(category) ?? false);
   });
 
   // Sort filtered posts (excludes the most recent one)

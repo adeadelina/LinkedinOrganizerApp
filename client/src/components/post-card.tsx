@@ -590,8 +590,8 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                // Show confirmation dialog before deleting
-                                if(confirm(`Are you sure you want to delete the "${category}" category?\n\nThis will remove this category from all posts, but the posts themselves will remain intact.\n\nClick OK to confirm deletion.`)) {
+                                // Show a more detailed confirmation dialog before deleting
+                                if(confirm(`DELETE CATEGORY\n\nAre you sure you want to permanently delete the "${category}" category?\n\nThis will:\n• Remove this category system-wide\n• Remove it from all posts\n• This cannot be undone\n\nThe posts themselves will remain intact.\n\nClick OK to delete this category permanently.`)) {
                                   deleteCategoryMutation.mutate(category);
                                 }
                               }}
@@ -601,7 +601,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Delete category completely</p>
+                            <p className="text-red-500 font-medium">Delete category from entire system</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
