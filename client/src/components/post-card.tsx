@@ -185,12 +185,12 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             {post.authorImage ? (
               <img 
                 src={post.authorImage} 
-                alt={`${post.authorName || 'User'}'s profile`} 
+                alt={`${post.authorName || (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}'s profile`} 
                 className="h-10 w-10 rounded-full"
               />
             ) : (
               <span className="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-medium">
-                {post.authorName?.[0] || "U"}
+                {post.authorName?.[0] || (post.url?.includes("linkedin.com") ? "L" : "U")}
               </span>
             )}
           </div>
@@ -198,7 +198,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-gray-900">
-                  {post.authorName || "Content Author"}
+                  {post.authorName ? post.authorName : (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}
                 </h3>
                 <p className="text-xs text-gray-500">
                   {getTimeElapsed(post.createdAt)}

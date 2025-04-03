@@ -445,17 +445,19 @@ export default function Home() {
                                       {post.authorImage ? (
                                         <img 
                                           src={post.authorImage} 
-                                          alt={post.authorName || "User"} 
+                                          alt={post.authorName || (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")} 
                                           className="h-8 w-8 rounded-full"
                                         />
                                       ) : (
                                         <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                                          {post.authorName?.[0] || "U"}
+                                          {post.authorName?.[0] || (post.url?.includes("linkedin.com") ? "L" : "U")}
                                         </div>
                                       )}
                                     </div>
                                     <div className="ml-3">
-                                      <h3 className="text-sm font-medium text-gray-900">{post.authorName || "Content Author"}</h3>
+                                      <h3 className="text-sm font-medium text-gray-900">
+                                        {post.authorName ? post.authorName : (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}
+                                      </h3>
                                       <p className="text-xs text-gray-500">
                                         {post.createdAt 
                                           ? new Date(post.createdAt).toLocaleString() 
