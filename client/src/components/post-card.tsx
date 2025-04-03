@@ -680,7 +680,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
 
         {/* Full Post Dialog */}
         <Dialog open={isFullPostDialogOpen} onOpenChange={setIsFullPostDialogOpen}>
-          <DialogContent className="sm:max-w-[680px]">
+          <DialogContent 
+            className="sm:max-w-[680px]"
+            onPointerDownOutside={() => setIsFullPostDialogOpen(false)}
+          >
             <DialogHeader>
               <DialogTitle className="flex items-center">
                 {post.authorImage && (
