@@ -263,8 +263,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           const isCategoryTag = target.closest('.category-tag');
           const isDialog = target.closest('[role="dialog"]');
           
-          if (!isButton && !isCategoryTag && !isDialog && !isProcessing && !isFailed && post.content) {
-            console.log("Opening full post dialog", post.id);
+          if (!isButton && !isCategoryTag && !isDialog && !isProcessing && !isFailed) {
+            console.log("Click on post card", post.id, "Content:", post.content ? "Yes" : "No");
+            // Open dialog even if content is empty to show post details
             setIsFullPostDialogOpen(true);
           }
         }}
@@ -685,9 +686,25 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </DialogHeader>
             <div className="py-4 max-h-[70vh] overflow-y-auto">
               <div className="text-sm text-gray-700 space-y-3">
-                {post.content?.split('\n').map((paragraph, i) => (
-                  paragraph ? <p key={i} className="mb-2">{paragraph}</p> : <br key={i} />
-                ))}
+                {post.content ? (
+                  post.content.split('\n').map((paragraph, i) => (
+                    paragraph ? <p key={i} className="mb-2">{paragraph}</p> : <br key={i} />
+                  ))
+                ) : (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
+                    <p className="text-amber-800 flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2" />
+                      This post doesn't have content available for display.
+                    </p>
+                    <p className="text-amber-700 mt-2 text-sm">
+                      This might be because the post was imported without content extraction 
+                      or there was an issue during content extraction.
+                    </p>
+                    <p className="text-amber-700 mt-2 text-sm">
+                      You can still view the original content at the source by clicking "View Original" below.
+                    </p>
+                  </div>
+                )}
               </div>
               
               {post.categories && post.categories.length > 0 && (
