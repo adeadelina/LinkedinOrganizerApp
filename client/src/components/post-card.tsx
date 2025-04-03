@@ -733,19 +733,11 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               )}
             </div>
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsFullPostDialogOpen(false)}
-              >
-                Close
-              </Button>
               <a
                 href={post.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block"
+                className="inline-block ml-auto"
               >
                 <Button 
                   variant="ghost" 
