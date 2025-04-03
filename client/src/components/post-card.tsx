@@ -70,13 +70,27 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         method: 'DELETE',
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Make sure dialog stays open after category deletion
+      // Close the category dialog only if explicitly requested
+      setIsCategoryDialogOpen(true);
+      
+      // Refresh selected categories based on what remains for this post
+      if (post.categories) {
+        // Remove the deleted category from the selected categories
+        setSelectedCategories(prev => prev.filter(c => data.includes(c)));
+      }
+      
       // Refetch categories after successful deletion
       refetchAvailableCategories();
-      // Also invalidate posts data as they may have had this category
-      queryClient.invalidateQueries({ queryKey: ['/api/posts'] });
-      // If onRefetch callback was provided, call it
-      if (onRefetch) onRefetch();
+      
+      // Invalidate posts data with a slight delay to ensure backend updates are complete
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/posts'] });
+        // If onRefetch callback was provided, call it
+        if (onRefetch) onRefetch();
+      }, 300);
+      
       toast({
         title: "Category deleted",
         description: "The category has been deleted and removed from all posts.",
@@ -577,7 +591,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 // Show confirmation dialog before deleting
-                                if(confirm(`Are you sure you want to delete the "${category}" category? This will remove it from all posts.`)) {
+                                if(confirm(`Are you sure you want to delete the "${category}" category?\n\nThis will remove this category from all posts, but the posts themselves will remain intact.\n\nClick OK to confirm deletion.`)) {
                                   deleteCategoryMutation.mutate(category);
                                 }
                               }}
