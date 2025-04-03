@@ -21,6 +21,7 @@ export interface IStorage {
   // Categories operations
   getAllCategories(): Promise<string[]>;
   addCategory(category: string): Promise<string[]>;
+  deleteCategory(category: string): Promise<string[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -179,6 +180,23 @@ export class MemStorage implements IStorage {
     // Don't add if it already exists (case insensitive check)
     if (!categories.some(c => c.toLowerCase() === category.toLowerCase())) {
       categories.push(category);
+    }
+    return categories;
+  }
+  
+  async deleteCategory(category: string): Promise<string[]> {
+    // Find the index of the category (case-sensitive)
+    const index = categories.indexOf(category);
+    if (index !== -1) {
+      // Remove the category
+      categories.splice(index, 1);
+      
+      // Also remove this category from all posts
+      Array.from(this.posts.values()).forEach(post => {
+        if (post.categories && post.categories.includes(category)) {
+          post.categories = post.categories.filter((c: string) => c !== category);
+        }
+      });
     }
     return categories;
   }

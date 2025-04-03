@@ -152,4 +152,26 @@ export class DbStorage implements IStorage {
     }
     return defaultCategories;
   }
+  
+  async deleteCategory(category: string): Promise<string[]> {
+    // Find the index of the category
+    const index = defaultCategories.indexOf(category);
+    if (index !== -1) {
+      // Remove the category from the list
+      defaultCategories.splice(index, 1);
+      console.log(`Category "${category}" deleted. Updated categories:`, defaultCategories);
+      
+      // Also update all posts to remove this category
+      const allPosts = await this.getAllPosts();
+      for (const post of allPosts) {
+        if (post.categories && post.categories.includes(category)) {
+          // Remove the category from the post
+          const updatedCategories = post.categories.filter(c => c !== category);
+          await this.updatePost(post.id, { categories: updatedCategories });
+        }
+      }
+    }
+    
+    return defaultCategories;
+  }
 }

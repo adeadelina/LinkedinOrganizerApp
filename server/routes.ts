@@ -142,6 +142,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Delete a category
+  app.delete("/api/categories/:category", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { category } = req.params;
+      if (!category) {
+        return res.status(400).json({ error: "Category parameter is required" });
+      }
+      
+      console.log(`Attempting to delete category: "${category}"`);
+      const updatedCategories = await storage.deleteCategory(category);
+      console.log(`Category "${category}" deleted. Remaining categories:`, updatedCategories);
+      res.json(updatedCategories);
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ error: "Failed to delete category" });
+    }
+  });
+  
   // Manually update post categories
   app.post("/api/posts/:id/update-categories", async (req: Request, res: Response) => {
     try {

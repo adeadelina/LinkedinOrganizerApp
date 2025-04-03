@@ -63,6 +63,35 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
     refetchOnWindowFocus: true, // Refetch when window regains focus
   });
   
+  // Mutation for deleting a category
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (category: string) => {
+      return apiRequest(`/api/categories/${encodeURIComponent(category)}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      // Refetch categories after successful deletion
+      refetchAvailableCategories();
+      // Also invalidate posts data as they may have had this category
+      queryClient.invalidateQueries({ queryKey: ['/api/posts'] });
+      // If onRefetch callback was provided, call it
+      if (onRefetch) onRefetch();
+      toast({
+        title: "Category deleted",
+        description: "The category has been deleted and removed from all posts.",
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to delete category:', error);
+      toast({
+        title: "Failed to delete category",
+        description: "An error occurred while deleting the category.",
+        variant: "destructive",
+      });
+    }
+  });
+  
   // Update post categories after state changes
   useEffect(() => {
     if (post.categories) {
@@ -516,21 +545,53 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                     >
                       {category}
                     </label>
-                    {selectedCategories.includes(category) && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-auto h-6 p-1 hover:bg-red-50 hover:text-red-500" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleCategoryChange(category);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Remove {category}</span>
-                      </Button>
-                    )}
+                    
+                    <div className="flex space-x-1">
+                      {/* Button to remove category from post (deselect) */}
+                      {selectedCategories.includes(category) && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 p-1 hover:bg-red-50 hover:text-red-500" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleCategoryChange(category);
+                          }}
+                          title="Remove from this post"
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="sr-only">Remove {category}</span>
+                        </Button>
+                      )}
+                      
+                      {/* Button to delete category entirely */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 p-1 hover:bg-red-50 hover:text-red-500" 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // Show confirmation dialog before deleting
+                                if(confirm(`Are you sure you want to delete the "${category}" category? This will remove it from all posts.`)) {
+                                  deleteCategoryMutation.mutate(category);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete category {category}</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete category completely</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </div>
                 ))}
 
@@ -556,7 +617,27 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                           {category}
                         </label>
                         <Badge variant="outline" className="bg-green-100">New</Badge>
-                        {selectedCategories.includes(category) && (
+                        
+                        <div className="flex space-x-1">
+                          {/* Button to remove category from post (deselect) */}
+                          {selectedCategories.includes(category) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 p-1 hover:bg-red-50 hover:text-red-500" 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCategoryChange(category);
+                              }}
+                              title="Remove from this post"
+                            >
+                              <X className="h-4 w-4" />
+                              <span className="sr-only">Remove {category}</span>
+                            </Button>
+                          )}
+                          
+                          {/* Button to completely remove the new category */}
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -564,13 +645,19 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              handleCategoryChange(category);
+                              // Remove from new categories
+                              setNewCategories(prev => prev.filter((c, i) => i !== index));
+                              // Also remove from selected if it's there
+                              if (selectedCategories.includes(category)) {
+                                setSelectedCategories(prev => prev.filter(c => c !== category));
+                              }
                             }}
+                            title="Remove new category"
                           >
-                            <X className="h-4 w-4" />
-                            <span className="sr-only">Remove {category}</span>
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete new category {category}</span>
                           </Button>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>
