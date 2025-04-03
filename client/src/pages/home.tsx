@@ -204,8 +204,6 @@ export default function Home() {
     }
     
     const categoryPosts = posts.filter(post => 
-      // Skip the most recent post
-      (mostRecentPost.length === 0 || post.id !== mostRecentPost[0].id) &&
       // Include only completed posts with this category
       post.categories && 
       Array.isArray(post.categories) && 
