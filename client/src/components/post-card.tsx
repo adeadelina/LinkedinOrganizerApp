@@ -254,21 +254,23 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
 
   return (
     <div className="border-t border-gray-200">
-      <div className="px-4 py-4 sm:px-6 border-b border-gray-200">
-        {/* Make the entire card clickable except for buttons and category tags */}
-        <div 
-          className="relative cursor-pointer"
-          onClick={(e) => {
-            // Only open the full post dialog if not clicking on a button or category tag
-            const target = e.target as HTMLElement;
-            const isButton = target.closest('button') || target.closest('a');
-            const isCategoryTag = target.closest('.category-tag');
-            
-            if (!isButton && !isCategoryTag && !isProcessing && !isFailed && post.content) {
-              setIsFullPostDialogOpen(true);
-            }
-          }}
-        >
+      <div 
+        className="px-4 py-4 sm:px-6 border-b border-gray-200 relative"
+        onClick={(e) => {
+          // Only open the full post dialog if not clicking on a button or category tag
+          const target = e.target as HTMLElement;
+          const isButton = target.closest('button') || target.closest('a');
+          const isCategoryTag = target.closest('.category-tag');
+          const isDialog = target.closest('[role="dialog"]');
+          
+          if (!isButton && !isCategoryTag && !isDialog && !isProcessing && !isFailed && post.content) {
+            console.log("Opening full post dialog", post.id);
+            setIsFullPostDialogOpen(true);
+          }
+        }}
+      >
+        {/* Content that should be clickable */}
+        <div className="relative cursor-pointer">
           <div className="flex items-center mb-4">
             <div className="flex-shrink-0">
               {post.authorImage ? (
