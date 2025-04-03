@@ -5,7 +5,7 @@ import { CategoryFilter } from "@/components/category-filter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Eye, Loader2, Tag, Plus, Edit2, X, Trash2, AlertTriangle } from "lucide-react";
+import { Check, Eye, Loader2, Tag, Plus, Edit2, X, Trash2, AlertTriangle, ExternalLink } from "lucide-react";
 import type { Post } from "@shared/schema";
 import { MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -425,6 +425,19 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               
               <div className="flex items-center space-x-2">
                 <Button 
+                  id={`view-full-post-${post.id}`}
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs text-[#0A66C2] border-[#0A66C2] hover:bg-blue-50"
+                  onClick={() => setIsFullPostDialogOpen(true)}
+                >
+                  <span className="flex items-center">
+                    <Eye className="h-3.5 w-3.5 mr-1" />
+                    View Full Post
+                  </span>
+                </Button>
+
+                <Button 
                   id={`edit-categories-${post.id}`}
                   variant="outline" 
                   size="sm" 
@@ -458,7 +471,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                     className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50"
                   >
                     <Eye className="h-3.5 w-3.5 mr-1" />
-                    View
+                    Original
                   </Button>
                 </a>
               </div>
