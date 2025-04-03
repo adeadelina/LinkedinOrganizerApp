@@ -63,6 +63,43 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const isFailed = post.processingStatus === "failed";
   
   // Mutation for updating post categories
+  // Mutation for re-extracting author information
+  const reExtractAuthorMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(
+        `/api/posts/${post.id}/reextract-author`,
+        { 
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Author information updated",
+        description: "The author's name and image have been successfully updated.",
+      });
+      
+      // Refresh the posts data to reflect the changes
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/posts'],
+        refetchType: 'active',
+      });
+      
+      // Refresh parent component
+      if (onRefetch) onRefetch();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating author information",
+        description: error instanceof Error 
+          ? error.message 
+          : "Could not extract author information from the LinkedIn post.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const updateCategoriesMutation = useMutation({
     mutationFn: async () => {
       // Deduplicate before sending to server
@@ -197,13 +234,49 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           <div className="ml-4 flex-1">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900">
-                  {post.authorName ? post.authorName : (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}
-                </h3>
+                <div className="flex items-center">
+                  <h3 className="text-sm font-medium text-gray-900">
+                    {post.authorName ? post.authorName : (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}
+                  </h3>
+                  
+                  {/* Re-extract author button - show only for LinkedIn posts with generic author names */}
+                  {post.url?.includes("linkedin.com") && 
+                   (!post.authorName || post.authorName === "LinkedIn Author" || post.authorName === "Content Author") && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 ml-1"
+                            onClick={() => reExtractAuthorMutation.mutate()}
+                            disabled={reExtractAuthorMutation.isPending}
+                          >
+                            {reExtractAuthorMutation.isPending ? (
+                              <Loader2 className="h-3.5 w-3.5 text-blue-600 animate-spin" />
+                            ) : (
+                              <Edit2 className="h-3.5 w-3.5 text-amber-600" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Extract actual author name</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">
                   {getTimeElapsed(post.createdAt)}
                 </p>
               </div>
+              
+              {/* Show status of author extraction if currently in progress */}
+              {reExtractAuthorMutation.isPending && (
+                <span className="text-xs text-blue-600 animate-pulse">
+                  Extracting author info...
+                </span>
+              )}
             </div>
           </div>
         </div>

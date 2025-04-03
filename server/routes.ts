@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { ZodError } from "zod";
 import { contentUrlSchema, insertPostSchema, MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
-import { analyzePostContent, extractLinkedInPostInfo, extractSubstackInfo } from "./openai";
+import { analyzePostContent, extractLinkedInPostInfo, extractSubstackInfo, reExtractLinkedInAuthor } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes - all prefixed with /api
@@ -160,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Start with existing categories and deduplicate
-      let selectedCategories = (categories || []).filter((category, index, self) => 
+      let selectedCategories = (categories || []).filter((category: string, index: number, self: string[]) => 
         self.indexOf(category) === index
       );
       
@@ -188,7 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Final deduplication step for safety
-      selectedCategories = selectedCategories.filter((category, index, self) => 
+      selectedCategories = selectedCategories.filter((category: string, index: number, self: string[]) => 
         self.indexOf(category) === index
       );
       
@@ -212,7 +212,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Manually update post content when automatic extraction fails
+  // Re-extract author information for LinkedIn posts with missing or placeholder authors
+  app.post("/api/posts/:id/reextract-author", async (req: Request, res: Response) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getPostById(postId);
+      
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      // Make sure we have a URL
+      if (!post.url) {
+        return res.status(400).json({ error: "Post has no URL to re-extract from" });
+      }
+
+      // Only proceed if it's a LinkedIn post
+      if (!post.url.includes('linkedin.com')) {
+        return res.status(400).json({ error: "Only LinkedIn posts are supported for author re-extraction" });
+      }
+      
+      try {
+        // Re-extract author information
+        console.log(`Attempting to re-extract author for post ${postId} from URL: ${post.url}`);
+        const authorInfo = await reExtractLinkedInAuthor(post.url);
+        
+        // Only update if we successfully got non-empty author information
+        if (authorInfo.authorName && authorInfo.authorName !== 'LinkedIn User') {
+          // Update the post with the new author information
+          await storage.updatePost(postId, {
+            authorName: authorInfo.authorName,
+            authorImage: authorInfo.authorImage || post.authorImage
+          });
+          
+          console.log(`Successfully updated author for post ${postId}: ${authorInfo.authorName}`);
+          
+          // Get the updated post
+          const updatedPost = await storage.getPostById(postId);
+          return res.json({ 
+            message: "Author information updated successfully", 
+            post: updatedPost 
+          });
+        } else {
+          return res.status(400).json({ 
+            error: "Could not extract valid author name",
+            post: post
+          });
+        }
+      } catch (extractError: any) {
+        console.error(`Error re-extracting author for post ${postId}:`, extractError);
+        return res.status(500).json({ 
+          error: `Failed to re-extract author: ${extractError.message}`,
+          post: post
+        });
+      }
+    } catch (error) {
+      console.error("Error in reextract-author endpoint:", error);
+      res.status(500).json({ error: "Failed to process author re-extraction" });
+    }
+  });
+
   app.post("/api/posts/:id/manual-content", async (req: Request, res: Response) => {
     try {
       const postId = parseInt(req.params.id);

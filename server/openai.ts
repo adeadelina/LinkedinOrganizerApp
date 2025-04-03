@@ -257,6 +257,40 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
  * @param url Substack newsletter URL
  * @returns Extraction result with content for analysis
  */
+/**
+ * Re-extracts only the author information from a LinkedIn post URL
+ * Used to fix posts where author information was not properly extracted initially
+ * @param url LinkedIn post URL
+ * @returns Promise with author name and image
+ */
+export async function reExtractLinkedInAuthor(url: string): Promise<{
+  authorName: string;
+  authorImage: string;
+}> {
+  if (!url || !url.includes('linkedin.com')) {
+    throw new Error('Valid LinkedIn URL is required');
+  }
+  
+  console.log(`Re-extracting author info from LinkedIn URL: ${url}`);
+  
+  // Import the ZenRows scraper
+  const { scrapeLinkedInPost } = await import('./zenrows');
+  
+  try {
+    // Use ZenRows API to extract data with focus on author information
+    const extractedData = await scrapeLinkedInPost(url);
+    
+    // Return just the author information
+    return {
+      authorName: extractedData.authorName,
+      authorImage: extractedData.authorImage,
+    };
+  } catch (error: any) {
+    console.error("Error re-extracting author info:", error);
+    throw new Error(`Failed to extract author information: ${error.message}`);
+  }
+}
+
 export async function extractSubstackInfo(url: string): Promise<{
   authorName: string;
   authorImage: string;
