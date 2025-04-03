@@ -310,18 +310,23 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
       <div 
         className="px-4 py-4 sm:px-6 border-b border-gray-200 relative cursor-pointer"
         onClick={(e) => {
-          // Only open the full post dialog if not clicking on a button, category tag, or input field
+          // Only open the full post dialog if not clicking on a button, category tag, form, or input field
           const target = e.target as HTMLElement;
           const isButton = target.closest('button') || target.closest('a');
           const isCategoryTag = target.closest('.category-tag');
           const isDialog = target.closest('[role="dialog"]');
           const isInput = target.tagName === 'INPUT' || target.closest('input');
+          const isForm = target.tagName === 'FORM' || target.closest('form');
+          
+          // Additional check for input fields with specific IDs
+          const isAddCategoryInput = target.id?.includes('add-category-input-') || 
+                                    !!target.closest(`input[id^="add-category-input-"]`);
           
           // Debug what is being clicked
-          console.log("Element clicked:", target.tagName, target.className);
+          console.log("Element clicked:", target.tagName, target.className, target.id);
           
           // Always open the dialog for completed posts, except when clicking on specific elements
-          if (!isButton && !isCategoryTag && !isDialog && !isInput && !isProcessing && !isFailed) {
+          if (!isButton && !isCategoryTag && !isDialog && !isInput && !isForm && !isAddCategoryInput && !isProcessing && !isFailed) {
             console.log("Opening dialog for post:", post.id);
             setIsFullPostDialogOpen(true);
           }
@@ -549,7 +554,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               {/* Direct category input field (if categories aren't maxed out) */}
               {post.categories && post.categories.length < MAX_CATEGORIES_PER_POST && (
                 <form 
-                  className="inline-flex items-center gap-1"
+                  className="inline-flex items-center gap-1 ml-1 pl-1 border-l border-gray-200"
                   onSubmit={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -563,10 +568,8 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                         return [...prev, directNewCategory.trim()];
                       });
                       
-                      // Update available categories if it's a new one
-                      if (!availableCategories.includes(directNewCategory.trim())) {
-                        setAvailableCategories(prev => [...prev, directNewCategory.trim()]);
-                      }
+                      // The category will be added to the system via the API
+                      // when we save the changes
                       
                       // Clear input
                       setDirectNewCategory('');
@@ -580,12 +583,20 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                     id={`add-category-input-${post.id}`}
                     value={directNewCategory}
                     onChange={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       setDirectNewCategory(e.target.value);
                     }}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder="+ Add category"
-                    className="h-6 text-xs w-28 min-w-24 bg-gray-50 border-dashed"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onFocus={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    placeholder="+ Add new category"
+                    className="h-6 text-xs w-36 min-w-36 bg-blue-50 border-dashed border-blue-200 hover:border-blue-300 focus:border-blue-400 transition-all"
                   />
                 </form>
               )}
