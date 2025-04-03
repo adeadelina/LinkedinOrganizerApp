@@ -149,9 +149,9 @@ export default function Home() {
       if (selectedCategories.length === 0) return true;
       
       // Check if the post has at least one of the selected categories
-      return selectedCategories.some(category => 
-        post.categories?.includes(category)
-      );
+      return post.categories && 
+             Array.isArray(post.categories) && 
+             selectedCategories.some(category => post.categories.includes(category));
     });
     
     if (eligiblePosts.length === 0) return [];
@@ -180,9 +180,9 @@ export default function Home() {
     if (selectedCategories.length === 0) return true;
     
     // Check if the post has at least one of the selected categories
-    return selectedCategories.some(category => 
-      post.categories?.includes(category)
-    );
+    return post.categories && 
+           Array.isArray(post.categories) && 
+           selectedCategories.some(category => post.categories.includes(category));
   });
 
   // Sort filtered posts (excludes the most recent one)
@@ -207,8 +207,12 @@ export default function Home() {
       // Skip the most recent post
       (mostRecentPost.length === 0 || post.id !== mostRecentPost[0].id) &&
       // Include only completed posts with this category
-      post.categories?.includes(category) && post.processingStatus === "completed"
+      post.categories && 
+      Array.isArray(post.categories) && 
+      post.categories.includes(category) && 
+      post.processingStatus === "completed"
     );
+    
     if (categoryPosts.length > 0) {
       acc[category] = categoryPosts;
     }
