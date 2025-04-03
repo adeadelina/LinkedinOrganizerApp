@@ -314,13 +314,17 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           const isButton = target.closest('button') || target.closest('a');
           const isCategoryTag = target.closest('.category-tag');
           const isDialog = target.closest('[role="dialog"]');
-          
+          const isModalOpen = isCategoryDialogOpen || isDeleteDialogOpen || isFullPostDialogOpen;
+
           // Debug what is being clicked
           console.log("Element clicked:", target.tagName, target.className);
           
-          // Always open the dialog for completed posts
-          if (!isButton && !isCategoryTag && !isDialog && !isProcessing && !isFailed) {
+          // Only open the dialog if no other actions or dialogs are in progress
+          if (!isButton && !isCategoryTag && !isDialog && !isProcessing && !isFailed && !isModalOpen) {
             console.log("Opening dialog for post:", post.id);
+            // Explicitly stop propagation and prevent default
+            e.stopPropagation();
+            e.preventDefault();
             setIsFullPostDialogOpen(true);
           }
         }}
@@ -546,7 +550,27 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
           <DialogContent 
             className="sm:max-w-[500px]"
-            onPointerDownOutside={() => setIsCategoryDialogOpen(false)}>
+            onPointerDownOutside={() => setIsCategoryDialogOpen(false)}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+              setIsCategoryDialogOpen(false);
+            }}
+          >
+            <div className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 flex items-center justify-center bg-red-100 hover:bg-red-200 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCategoryDialogOpen(false);
+                }}
+              >
+                <X className="h-4 w-4 text-red-600" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </div>
+            
             <DialogHeader>
               <DialogTitle>Manage Categories</DialogTitle>
               <DialogDescription>
@@ -775,7 +799,27 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent 
             className="sm:max-w-[425px]"
-            onPointerDownOutside={() => setIsDeleteDialogOpen(false)}>
+            onPointerDownOutside={() => setIsDeleteDialogOpen(false)}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+              setIsDeleteDialogOpen(false);
+            }}
+          >
+            <div className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 flex items-center justify-center bg-red-100 hover:bg-red-200 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDeleteDialogOpen(false);
+                }}
+              >
+                <X className="h-4 w-4 text-red-600" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </div>
+            
             <DialogHeader>
               <DialogTitle className="flex items-center text-red-600">
                 <AlertTriangle className="h-5 w-5 mr-2" />
@@ -823,7 +867,26 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           <DialogContent 
             className="sm:max-w-[680px]"
             onPointerDownOutside={() => setIsFullPostDialogOpen(false)}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+              setIsFullPostDialogOpen(false);
+            }}
           >
+            <div className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 flex items-center justify-center bg-red-100 hover:bg-red-200 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsFullPostDialogOpen(false);
+                }}
+              >
+                <X className="h-4 w-4 text-red-600" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </div>
+            
             <DialogHeader>
               <DialogTitle className="flex items-center">
                 {post.authorImage && (
