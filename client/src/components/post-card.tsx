@@ -346,24 +346,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             {/* Category section header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <h4 className="text-xs font-medium text-gray-700 mr-2">Categories:</h4>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-5 w-5" 
-                        onClick={() => setIsCategoryDialogOpen(true)}
-                      >
-                        <Edit2 className="h-3.5 w-3.5 text-blue-600" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Edit categories</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                {/* Categories label and inline edit button removed */}
               </div>
               
               <div className="flex items-center space-x-2">
