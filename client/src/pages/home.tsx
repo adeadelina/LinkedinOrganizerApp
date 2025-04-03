@@ -584,15 +584,7 @@ export default function Home() {
                                       
                                       // Footer with actions
                                       const footer = document.createElement('div');
-                                      footer.className = 'border-t p-4 flex justify-between';
-                                      
-                                      // Close button
-                                      const closeButton = document.createElement('button');
-                                      closeButton.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200';
-                                      closeButton.textContent = 'Close';
-                                      closeButton.onclick = () => {
-                                        document.body.removeChild(dialogRef);
-                                      };
+                                      footer.className = 'border-t p-4 flex justify-end';
                                       
                                       // View original link
                                       const viewOriginalLink = document.createElement('a');
@@ -606,7 +598,6 @@ export default function Home() {
                                       
                                       viewOriginalLink.appendChild(viewButton);
                                       
-                                      footer.appendChild(closeButton);
                                       footer.appendChild(viewOriginalLink);
                                       
                                       dialogContent.appendChild(footer);
