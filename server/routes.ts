@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 import { contentUrlSchema, insertPostSchema, MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { analyzePostContent, extractLinkedInPostInfo, extractSubstackInfo, reExtractLinkedInAuthor } from "./openai";
+import { isAuthenticated } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes - all prefixed with /api
@@ -329,6 +330,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating post manually:", error);
       res.status(500).json({ error: "Failed to update post content" });
+    }
+  });
+
+  // Delete a post
+  app.delete("/api/posts/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getPostById(postId);
+      
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      // Only allow deleting posts that are already processed or have categories assigned
+      if (post.processingStatus === "processing" && (!post.categories || post.categories.length === 0)) {
+        return res.status(400).json({ 
+          error: "Cannot delete a post that is still being processed and has no categories" 
+        });
+      }
+      
+      const deleted = await storage.deletePost(postId);
+      
+      if (deleted) {
+        console.log(`[Post ${postId}] Successfully deleted post`);
+        return res.json({ success: true, message: "Post deleted successfully" });
+      } else {
+        return res.status(500).json({ error: "Failed to delete post" });
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      res.status(500).json({ error: "Failed to delete post" });
     }
   });
 

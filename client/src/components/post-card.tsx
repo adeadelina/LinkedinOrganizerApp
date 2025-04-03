@@ -5,7 +5,7 @@ import { CategoryFilter } from "@/components/category-filter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Eye, Loader2, Tag, Plus, Edit2, X } from "lucide-react";
+import { Check, Eye, Loader2, Tag, Plus, Edit2, X, Trash2, AlertTriangle } from "lucide-react";
 import type { Post } from "@shared/schema";
 import { MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -38,9 +38,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   
-  // State for new category input
+  // State for new category input and delete confirmation
   const [newCategory, setNewCategory] = useState("");
   const [newCategories, setNewCategories] = useState<string[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // Fetch available categories
   const { 
@@ -100,6 +101,43 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
     }
   });
 
+  // Mutation for deleting a post
+  const deletePostMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(
+        `/api/posts/${post.id}`,
+        { 
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    },
+    onSuccess: () => {
+      toast({
+        title: "Post deleted",
+        description: "The post has been successfully deleted.",
+      });
+      setIsDeleteDialogOpen(false);
+      
+      // Refresh all posts data
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/posts'],
+        refetchType: 'active',
+      });
+      
+      // Refresh parent component
+      if (onRefetch) onRefetch();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting post",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+      setIsDeleteDialogOpen(false);
+    }
+  });
+  
   const updateCategoriesMutation = useMutation({
     mutationFn: async () => {
       // Deduplicate before sending to server
@@ -360,6 +398,17 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <Edit2 className="h-3.5 w-3.5 mr-1" />
                   Edit Categories
                 </Button>
+
+                <Button 
+                  id={`delete-post-${post.id}`}
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Delete
+                </Button>
                 
                 <a 
                   href={post.url}
@@ -540,6 +589,73 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <>
                     <Check className="h-3.5 w-3.5 mr-1" />
                     Save Changes
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-red-600">
+                <AlertTriangle className="h-5 w-5 mr-2" /> Delete Post
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this post? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="border rounded p-3 bg-gray-50 mb-4">
+                <p className="text-sm font-medium text-gray-800 mb-1 truncate">
+                  {post.authorName || "Unknown Author"}
+                </p>
+                <p className="text-xs text-gray-600 truncate">
+                  {post.url}
+                </p>
+                {post.categories && post.categories.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {post.categories.slice(0, 3).map(category => (
+                      <Badge key={category} variant="outline" className="text-xs">
+                        {category}
+                      </Badge>
+                    ))}
+                    {post.categories.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{post.categories.length - 3} more
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => deletePostMutation.mutate()}
+                disabled={deletePostMutation.isPending}
+              >
+                {deletePostMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Delete Post
                   </>
                 )}
               </Button>
