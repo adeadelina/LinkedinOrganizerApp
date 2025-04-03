@@ -607,30 +607,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                 Are you sure you want to delete this post? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-              <div className="border rounded p-3 bg-gray-50 mb-4">
-                <p className="text-sm font-medium text-gray-800 mb-1 truncate">
-                  {post.authorName || "Unknown Author"}
-                </p>
-                <p className="text-xs text-gray-600 truncate">
-                  {post.url}
-                </p>
-                {post.categories && post.categories.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {post.categories.slice(0, 3).map(category => (
-                      <Badge key={category} variant="outline" className="text-xs">
-                        {category}
-                      </Badge>
-                    ))}
-                    {post.categories.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{post.categories.length - 3} more
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Post preview has been removed as requested */}
             <DialogFooter className="sm:justify-between">
               <Button
                 type="button"
