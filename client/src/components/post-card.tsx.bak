@@ -5,7 +5,7 @@ import { CategoryFilter } from "@/components/category-filter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Edit, Eye, Loader2, Tag, Plus } from "lucide-react";
+import { Check, Eye, Loader2, Tag, Plus, Edit2, X, Trash2, AlertTriangle } from "lucide-react";
 import type { Post } from "@shared/schema";
 import { MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PostCardProps {
   post: Post;
@@ -34,14 +35,23 @@ interface PostCardProps {
 export function PostCard({ post, onRefetch }: PostCardProps) {
   const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
-  // No manual content entry states needed
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   
+  // State for new category input, delete confirmation, and full post view
+  const [newCategory, setNewCategory] = useState("");
+  const [newCategories, setNewCategories] = useState<string[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isFullPostDialogOpen, setIsFullPostDialogOpen] = useState(false);
+  
   // Fetch available categories
-  const { data: availableCategories = [] } = useQuery<string[]>({
+  const { 
+    data: availableCategories = [],
+    refetch: refetchAvailableCategories
+  } = useQuery<string[]>({
     queryKey: ['/api/categories'],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
   
   // Update post categories after state changes
@@ -54,21 +64,100 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const isProcessing = post.processingStatus === "processing";
   const isFailed = post.processingStatus === "failed";
   
-  // No manual content mutation needed
-  
-  // State for new category input
-  const [newCategory, setNewCategory] = useState("");
-  const [newCategories, setNewCategories] = useState<string[]>([]);
-  
   // Mutation for updating post categories
-  const updateCategoriesMutation = useMutation({
+  // Mutation for re-extracting author information
+  const reExtractAuthorMutation = useMutation({
     mutationFn: async () => {
       return apiRequest(
-        "POST",
+        `/api/posts/${post.id}/reextract-author`,
+        { 
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Author information updated",
+        description: "The author's name and image have been successfully updated.",
+      });
+      
+      // Refresh the posts data to reflect the changes
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/posts'],
+        refetchType: 'active',
+      });
+      
+      // Refresh parent component
+      if (onRefetch) onRefetch();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating author information",
+        description: error instanceof Error 
+          ? error.message 
+          : "Could not extract author information from the LinkedIn post.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation for deleting a post
+  const deletePostMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(
+        `/api/posts/${post.id}`,
+        { 
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    },
+    onSuccess: () => {
+      toast({
+        title: "Post deleted",
+        description: "The post has been successfully deleted.",
+      });
+      setIsDeleteDialogOpen(false);
+      
+      // Refresh all posts data
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/posts'],
+        refetchType: 'active',
+      });
+      
+      // Refresh parent component
+      if (onRefetch) onRefetch();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting post",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+      setIsDeleteDialogOpen(false);
+    }
+  });
+  
+  const updateCategoriesMutation = useMutation({
+    mutationFn: async () => {
+      // Deduplicate before sending to server
+      const uniqueSelectedCategories = selectedCategories.filter((category, index, self) => 
+        self.indexOf(category) === index
+      );
+      const uniqueNewCategories = newCategories.filter((category, index, self) => 
+        self.indexOf(category) === index
+      );
+      
+      return apiRequest(
         `/api/posts/${post.id}/update-categories`,
         { 
-          categories: selectedCategories,
-          newCategories: newCategories 
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categories: uniqueSelectedCategories,
+            newCategories: uniqueNewCategories 
+          })
         }
       );
     },
@@ -79,8 +168,32 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
       });
       setIsCategoryDialogOpen(false);
       setNewCategories([]);
-      // Refresh the categories list
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      
+      // Refresh all data that depends on categories with immediate refetching
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/categories'],
+        refetchType: 'active',
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/posts'],
+        refetchType: 'active',
+      });
+      
+      // Force multiple refreshes to ensure we get the latest data
+      setTimeout(() => {
+        // First immediate refresh
+        refetchAvailableCategories()
+          .then(() => {
+            console.log("Categories refreshed successfully");
+            // Second refresh after a short delay
+            setTimeout(() => {
+              refetchAvailableCategories();
+              if (onRefetch) onRefetch();
+            }, 500);
+          });
+      }, 100);
+      
+      // Refresh parent component
       if (onRefetch) onRefetch();
     },
     onError: (error) => {
@@ -139,140 +252,37 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const toggleExpand = () => {
     setExpanded(!expanded);
   };
-  
-  // Handle manual content submission
-  const handleManualContentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (manualContent.trim().length === 0) {
-      toast({
-        title: "Error",
-        description: "Please enter some content before submitting",
-        variant: "destructive",
-      });
-      return;
-    }
-    manualContentMutation.mutate();
-  };
 
   return (
     <div className="border-t border-gray-200">
-      {showManualInput ? (
-        // Manual content entry form
-        <div className="px-4 py-4 sm:px-6 border-b border-gray-200">
-          <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
-            <h3 className="text-md font-semibold text-gray-900">
-              Manual Content Entry
-            </h3>
-            <Button 
-              onClick={() => setShowManualInput(false)} 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs h-8 px-2"
-            >
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
-          </div>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-            <h4 className="text-sm font-medium text-blue-800 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-              Instructions for manual content entry
-            </h4>
-            <p className="mt-1 text-xs text-blue-700">
-              1. Visit the original content by clicking "View" above<br />
-              2. Copy the author name and content<br />
-              3. Paste them in the fields below<br />
-              4. Our AI will analyze and categorize the content
-            </p>
-          </div>
-          
-          <form onSubmit={handleManualContentSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="authorName" className="block text-sm font-medium text-gray-700 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                Author Name
-              </label>
-              <Input
-                id="authorName"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                placeholder="Content Author"
-                className="mt-1"
-              />
-            </div>
+      <div className="px-4 py-4 sm:px-6 border-b border-gray-200">
+        {/* Make the entire card clickable except for buttons and category tags */}
+        <div 
+          className="relative cursor-pointer"
+          onClick={(e) => {
+            // Only open the full post dialog if not clicking on a button or category tag
+            const target = e.target as HTMLElement;
+            const isButton = target.closest('button') || target.closest('a');
+            const isCategoryTag = target.closest('.category-tag');
             
-            <div>
-              <label htmlFor="manualContent" className="block text-sm font-medium text-gray-700 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                Content
-              </label>
-              <Textarea
-                id="manualContent"
-                value={manualContent}
-                onChange={(e) => setManualContent(e.target.value)}
-                placeholder="Paste the content here..."
-                className="mt-1 min-h-[200px]"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Make sure to include the full content for the most accurate categorization
-              </p>
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button 
-                type="button"
-                onClick={() => setShowManualInput(false)} 
-                variant="outline" 
-                size="sm"
-                disabled={manualContentMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                size="sm"
-                disabled={manualContentMutation.isPending}
-              >
-                {manualContentMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Submit
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
-      ) : (
-        // Regular post display
-        <div className="px-4 py-4 sm:px-6 border-b border-gray-200">
+            if (!isButton && !isCategoryTag && !isProcessing && !isFailed && post.content) {
+              setIsFullPostDialogOpen(true);
+            }
+          }}
+        >
           <div className="flex items-center mb-4">
             <div className="flex-shrink-0">
               {post.authorImage ? (
                 <img 
                   src={post.authorImage} 
-                  alt={`${post.authorName || 'User'}'s profile`} 
+                  alt={`${post.authorName || (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}'s profile`} 
                   className="h-10 w-10 rounded-full"
                 />
               ) : (
                 <span className="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-medium">
-                  {post.authorName?.[0] || "U"}
+                  {(post.authorName && post.authorName !== "LinkedIn User") 
+                    ? post.authorName[0]
+                    : (post.url?.includes("linkedin.com") ? "L" : "U")}
                 </span>
               )}
             </div>
@@ -280,24 +290,16 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-gray-900">
-                    {post.authorName || "Content Author"}
+                    {post.authorName && post.authorName !== "LinkedIn User" 
+                      ? post.authorName 
+                      : post.url?.includes("linkedin.com") 
+                        ? "LinkedIn Author" 
+                        : "Content Author"}
                   </h3>
                   <p className="text-xs text-gray-500">
                     {getTimeElapsed(post.createdAt)}
                   </p>
                 </div>
-                {!isProcessing && !isFailed && (
-                  <div className="flex flex-wrap gap-1">
-                    {post.categories?.slice(0, 2).map((category) => (
-                      <CategoryFilter key={category} category={category} />
-                    ))}
-                    {post.categories && post.categories.length > 2 && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                        +{post.categories.length - 2}
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -351,27 +353,15 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                     )}
                     
                     <div className="mt-3 p-3 border border-yellow-300 bg-yellow-50 rounded-md">
-                      <h4 className="font-medium text-yellow-800">Solution: Manual Entry Available</h4>
+                      <h4 className="font-medium text-yellow-800">Failed to extract content</h4>
                       <p className="mt-1 text-sm text-yellow-700">
-                        You can manually enter the content for AI analysis and categorization.
+                        Please try a different URL or check the source is accessible.
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                            <polyline points="15 3 21 3 21 9"></polyline>
-                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                          </svg>
+                          <Eye className="h-3.5 w-3.5 mr-1" />
                           View original content
                         </a>
-                        <Button 
-                          onClick={() => setShowManualInput(true)} 
-                          size="sm"
-                          className="text-xs bg-yellow-600 hover:bg-yellow-700 text-white"
-                        >
-                          <Edit className="h-3.5 w-3.5 mr-1" />
-                          Enter content manually
-                        </Button>
                       </div>
                     </div>
                   </div>
@@ -386,7 +376,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               
               {!expanded && post.content && post.content.split('\n').length > 5 && (
                 <button 
-                  onClick={toggleExpand}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent the full post dialog from opening
+                    toggleExpand();
+                  }}
                   className="text-[#0A66C2] hover:text-blue-700 font-medium text-sm"
                 >
                   Read more...
@@ -395,7 +388,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               
               {expanded && (
                 <button 
-                  onClick={toggleExpand}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent the full post dialog from opening
+                    toggleExpand();
+                  }}
                   className="text-[#0A66C2] hover:text-blue-700 font-medium text-sm"
                 >
                   Show less
@@ -403,185 +399,36 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               )}
             </div>
           )}
-          
-          {!isProcessing && !isFailed && (
-            <div className="mt-4 flex justify-between">
-              <div className="flex items-center text-gray-500 text-xs flex-wrap gap-1">
-                {post.categories && post.categories.length > 0 ? (
-                  post.categories.map((category) => (
-                    <CategoryFilter key={category} category={category} />
-                  ))
-                ) : (
-                  <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                    <Tag className="h-3 w-3 mr-1" />
-                    Categories needed
-                  </div>
-                )}
+        
+        {!isProcessing && !isFailed && (
+          <div className="mt-4 flex flex-col space-y-3">
+            {/* Category section header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                {/* Categories label and inline edit button removed */}
               </div>
-              <div className="flex space-x-2">
-                {/* Category Management Dialog */}
-                <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-xs"
-                    >
-                      <Tag className="h-3.5 w-3.5 mr-1" />
-                      {post.categories?.length === 0 ? "Assign Categories" : "Edit Categories"}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Manage Categories</DialogTitle>
-                      <DialogDescription>
-                        Select the categories that best match this post's content.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                      <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto p-2">
-                        {availableCategories.map((category: string) => (
-                          <div key={category} className="flex items-center space-x-2 border rounded p-2">
-                            <Checkbox 
-                              id={`category-${category}`} 
-                              checked={selectedCategories.includes(category)}
-                              onCheckedChange={() => handleCategoryChange(category)}
-                              disabled={
-                                !selectedCategories.includes(category) && 
-                                selectedCategories.length >= MAX_CATEGORIES_PER_POST
-                              }
-                            />
-                            <label 
-                              htmlFor={`category-${category}`}
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                            >
-                              {category}
-                            </label>
-                            {selectedCategories.includes(category) && (
-                              <Badge variant="secondary" className="ml-auto">Selected</Badge>
-                            )}
-                          </div>
-                        ))}
-
-                        {/* New categories section */}
-                        {newCategories.length > 0 && (
-                          <div className="mt-2 border-t pt-3">
-                            <h4 className="text-sm font-medium mb-2">Your new categories:</h4>
-                            {newCategories.map((category, index) => (
-                              <div key={`new-${index}`} className="flex items-center space-x-2 border rounded p-2 mb-2 bg-green-50">
-                                <Checkbox 
-                                  id={`category-new-${index}`} 
-                                  checked={selectedCategories.includes(category)}
-                                  onCheckedChange={() => handleCategoryChange(category)}
-                                  disabled={
-                                    !selectedCategories.includes(category) && 
-                                    selectedCategories.length >= MAX_CATEGORIES_PER_POST
-                                  }
-                                />
-                                <label 
-                                  htmlFor={`category-new-${index}`}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                                >
-                                  {category}
-                                </label>
-                                <Badge variant="outline" className="bg-green-100">New</Badge>
-                                {selectedCategories.includes(category) && (
-                                  <Badge variant="secondary" className="ml-1">Selected</Badge>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Add new category input */}
-                      <div className="mt-4 mb-2">
-                        <h4 className="text-sm font-medium mb-2">Add a new category:</h4>
-                        <div className="flex gap-2">
-                          <Input
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                            placeholder="Enter new category"
-                            className="flex-1"
-                          />
-                          <Button 
-                            type="button" 
-                            size="sm"
-                            onClick={() => {
-                              if (newCategory.trim()) {
-                                // Add to new categories list
-                                setNewCategories(prev => [...prev, newCategory.trim()]);
-                                // Also select it
-                                if (selectedCategories.length < MAX_CATEGORIES_PER_POST) {
-                                  setSelectedCategories(prev => [...prev, newCategory.trim()]);
-                                }
-                                // Clear input
-                                setNewCategory('');
-                              }
-                            }}
-                            disabled={!newCategory.trim()}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
-                        <p className="text-xs text-amber-800">
-                          Selected categories: {selectedCategories.length ? 
-                            selectedCategories.join(', ') : 
-                            'None (please select at least one)'}
-                        </p>
-                        <p className="text-xs text-amber-800 mt-1">
-                          {selectedCategories.length}/{MAX_CATEGORIES_PER_POST} maximum categories used
-                        </p>
-                      </div>
-                    </div>
-                    <DialogFooter className="sm:justify-between">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setSelectedCategories(post.categories || []);
-                          setNewCategories([]);
-                          setNewCategory('');
-                          setIsCategoryDialogOpen(false);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        type="button" 
-                        size="sm" 
-                        onClick={handleSaveCategories}
-                        disabled={updateCategoriesMutation.isPending}
-                      >
-                        {updateCategoriesMutation.isPending ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Check className="h-3.5 w-3.5 mr-1" />
-                            Save Changes
-                          </>
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
+              
+              <div className="flex items-center space-x-2">
                 <Button 
+                  id={`edit-categories-${post.id}`}
                   variant="outline" 
                   size="sm" 
                   className="text-xs"
-                  onClick={() => setShowManualInput(true)}
+                  onClick={() => setIsCategoryDialogOpen(true)}
                 >
-                  <Edit className="h-3.5 w-3.5 mr-1" />
-                  Edit
+                  <Edit2 className="h-3.5 w-3.5 mr-1" />
+                  Edit Categories
+                </Button>
+
+                <Button 
+                  id={`delete-post-${post.id}`}
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Delete
                 </Button>
                 
                 <a 
@@ -601,9 +448,285 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                 </a>
               </div>
             </div>
-          )}
-        </div>
-      )}
+            
+            {/* Category badges */}
+            <div className="flex items-center text-gray-500 text-xs flex-wrap gap-1">
+              {post.categories && post.categories.length > 0 ? (
+                // Remove duplicate categories
+                post.categories.filter((category, index, self) => 
+                  self.indexOf(category) === index
+                ).map((category) => (
+                  <CategoryFilter 
+                    key={category} 
+                    category={category}
+                    onClick={() => {}}
+                  />
+                ))
+              ) : (
+                <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                  <Tag className="h-3 w-3 mr-1" />
+                  No categories assigned
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Category Edit Dialog */}
+        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Manage Categories</DialogTitle>
+              <DialogDescription>
+                Select the categories that best match this post's content.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto p-2">
+                {availableCategories.map((category: string) => (
+                  <div key={category} className="flex items-center space-x-2 border rounded p-2">
+                    <Checkbox 
+                      id={`category-${category}`} 
+                      checked={selectedCategories.includes(category)}
+                      onCheckedChange={() => handleCategoryChange(category)}
+                      disabled={
+                        !selectedCategories.includes(category) && 
+                        selectedCategories.length >= MAX_CATEGORIES_PER_POST
+                      }
+                    />
+                    <label 
+                      htmlFor={`category-${category}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                    >
+                      {category}
+                    </label>
+                    {selectedCategories.includes(category) && (
+                      <Badge variant="secondary" className="ml-auto">Selected</Badge>
+                    )}
+                  </div>
+                ))}
+
+                {/* New categories section */}
+                {newCategories.length > 0 && (
+                  <div className="mt-2 border-t pt-3">
+                    <h4 className="text-sm font-medium mb-2">Your new categories:</h4>
+                    {newCategories.map((category, index) => (
+                      <div key={`new-${index}`} className="flex items-center space-x-2 border rounded p-2 mb-2 bg-green-50">
+                        <Checkbox 
+                          id={`category-new-${index}`} 
+                          checked={selectedCategories.includes(category)}
+                          onCheckedChange={() => handleCategoryChange(category)}
+                          disabled={
+                            !selectedCategories.includes(category) && 
+                            selectedCategories.length >= MAX_CATEGORIES_PER_POST
+                          }
+                        />
+                        <label 
+                          htmlFor={`category-new-${index}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                        >
+                          {category}
+                        </label>
+                        <Badge variant="outline" className="bg-green-100">New</Badge>
+                        {selectedCategories.includes(category) && (
+                          <Badge variant="secondary" className="ml-1">Selected</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Add new category input */}
+              <div className="mt-4 mb-2">
+                <h4 className="text-sm font-medium mb-2">Add a new category:</h4>
+                <div className="flex gap-2">
+                  <Input
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Enter new category"
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    size="sm"
+                    onClick={() => {
+                      if (newCategory.trim()) {
+                        // Add to new categories list
+                        setNewCategories(prev => [...prev, newCategory.trim()]);
+                        // Also select it
+                        if (selectedCategories.length < MAX_CATEGORIES_PER_POST) {
+                          setSelectedCategories(prev => [...prev, newCategory.trim()]);
+                        }
+                        // Clear input
+                        setNewCategory('');
+                      }
+                    }}
+                    disabled={!newCategory.trim()}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
+                <p className="text-xs text-amber-800">
+                  Selected categories: {selectedCategories.length ? 
+                    selectedCategories.join(', ') : 
+                    'None (please select at least one)'}
+                </p>
+                <p className="text-xs text-amber-800 mt-1">
+                  {selectedCategories.length}/{MAX_CATEGORIES_PER_POST} maximum categories used
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-between">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setSelectedCategories(post.categories || []);
+                  setNewCategories([]);
+                  setNewCategory('');
+                  setIsCategoryDialogOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                size="sm" 
+                onClick={handleSaveCategories}
+                disabled={updateCategoriesMutation.isPending}
+              >
+                {updateCategoriesMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3.5 w-3.5 mr-1" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-red-600">
+                <AlertTriangle className="h-5 w-5 mr-2" /> Delete Post
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this post? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {/* Post preview has been removed as requested */}
+            <DialogFooter className="sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => deletePostMutation.mutate()}
+                disabled={deletePostMutation.isPending}
+              >
+                {deletePostMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Delete Post
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Full Post Dialog */}
+        <Dialog open={isFullPostDialogOpen} onOpenChange={setIsFullPostDialogOpen}>
+          <DialogContent className="sm:max-w-[680px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                {post.authorImage && (
+                  <img 
+                    src={post.authorImage} 
+                    alt={`${post.authorName || 'Author'}'s profile`}
+                    className="h-8 w-8 rounded-full mr-2"
+                  />
+                )}
+                {post.authorName || 'Post Content'}
+              </DialogTitle>
+              <DialogDescription>
+                {post.url}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 max-h-[70vh] overflow-y-auto">
+              <div className="text-sm text-gray-700 space-y-3">
+                {post.content?.split('\n').map((paragraph, i) => (
+                  paragraph ? <p key={i} className="mb-2">{paragraph}</p> : <br key={i} />
+                ))}
+              </div>
+              
+              {post.categories && post.categories.length > 0 && (
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-medium mb-2">Categories:</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {post.categories.map(category => (
+                      <Badge key={category} variant="outline" className="text-xs">
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFullPostDialogOpen(false)}
+              >
+                Close
+              </Button>
+              <a
+                href={post.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block"
+              >
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50"
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1" />
+                  View Original
+                </Button>
+              </a>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

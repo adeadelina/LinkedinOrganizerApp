@@ -38,10 +38,11 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   
-  // State for new category input and delete confirmation
+  // State for new category input, delete confirmation, and full post view
   const [newCategory, setNewCategory] = useState("");
   const [newCategories, setNewCategories] = useState<string[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isFullPostDialogOpen, setIsFullPostDialogOpen] = useState(false);
   
   // Fetch available categories
   const { 
@@ -63,7 +64,6 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   const isProcessing = post.processingStatus === "processing";
   const isFailed = post.processingStatus === "failed";
   
-  // Mutation for updating post categories
   // Mutation for re-extracting author information
   const reExtractAuthorMutation = useMutation({
     mutationFn: async () => {
@@ -255,129 +255,150 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   return (
     <div className="border-t border-gray-200">
       <div className="px-4 py-4 sm:px-6 border-b border-gray-200">
-        <div className="flex items-center mb-4">
-          <div className="flex-shrink-0">
-            {post.authorImage ? (
-              <img 
-                src={post.authorImage} 
-                alt={`${post.authorName || (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}'s profile`} 
-                className="h-10 w-10 rounded-full"
-              />
-            ) : (
-              <span className="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-medium">
-                {(post.authorName && post.authorName !== "LinkedIn User") 
-                  ? post.authorName[0]
-                  : (post.url?.includes("linkedin.com") ? "L" : "U")}
-              </span>
-            )}
-          </div>
-          <div className="ml-4 flex-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">
-                  {post.authorName && post.authorName !== "LinkedIn User" 
-                    ? post.authorName 
-                    : post.url?.includes("linkedin.com") 
-                      ? "LinkedIn Author" 
-                      : "Content Author"}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {getTimeElapsed(post.createdAt)}
-                </p>
+        {/* Make the entire card clickable except for buttons and category tags */}
+        <div 
+          className="relative cursor-pointer"
+          onClick={(e) => {
+            // Only open the full post dialog if not clicking on a button or category tag
+            const target = e.target as HTMLElement;
+            const isButton = target.closest('button') || target.closest('a');
+            const isCategoryTag = target.closest('.category-tag');
+            
+            if (!isButton && !isCategoryTag && !isProcessing && !isFailed && post.content) {
+              setIsFullPostDialogOpen(true);
+            }
+          }}
+        >
+          <div className="flex items-center mb-4">
+            <div className="flex-shrink-0">
+              {post.authorImage ? (
+                <img 
+                  src={post.authorImage} 
+                  alt={`${post.authorName || (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}'s profile`} 
+                  className="h-10 w-10 rounded-full"
+                />
+              ) : (
+                <span className="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                  {(post.authorName && post.authorName !== "LinkedIn User") 
+                    ? post.authorName[0]
+                    : (post.url?.includes("linkedin.com") ? "L" : "U")}
+                </span>
+              )}
+            </div>
+            <div className="ml-4 flex-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900">
+                    {post.authorName && post.authorName !== "LinkedIn User" 
+                      ? post.authorName 
+                      : post.url?.includes("linkedin.com") 
+                        ? "LinkedIn Author" 
+                        : "Content Author"}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    {getTimeElapsed(post.createdAt)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        
-        {isProcessing ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="mr-3 flex-shrink-0 bg-blue-100 rounded-full p-1">
-                <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+          
+          {isProcessing ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="mr-3 flex-shrink-0 bg-blue-100 rounded-full p-1">
+                  <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-blue-800">
+                    {post.processingStatus === "extracting" 
+                      ? "Extracting content..." 
+                      : post.processingStatus === "analyzing" 
+                        ? "Analyzing content..." 
+                        : "Processing content..."}
+                  </h3>
+                  <p className="mt-1 text-xs text-blue-600">
+                    Please wait while we process your content. This may take a few moments.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-medium text-blue-800">
-                  {post.processingStatus === "extracting" 
-                    ? "Extracting content..." 
-                    : post.processingStatus === "analyzing" 
-                      ? "Analyzing content..." 
-                      : "Processing content..."}
-                </h3>
-                <p className="mt-1 text-xs text-blue-600">
-                  Please wait while we process your content. This may take a few moments.
-                </p>
+              <div className="ml-auto flex items-center space-x-1">
+                <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-ping"></span>
+                <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-pulse animation-delay-200"></span>
+                <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-ping animation-delay-500"></span>
               </div>
             </div>
-            <div className="ml-auto flex items-center space-x-1">
-              <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-ping"></span>
-              <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-pulse animation-delay-200"></span>
-              <span className="inline-block h-2 w-2 bg-blue-600 rounded-full animate-ping animation-delay-500"></span>
-            </div>
-          </div>
-        ) : isFailed ? (
-          <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Processing failed</h3>
-                <div className="mt-2 text-sm text-red-700">
-                  {post.processError?.includes('422') ? (
-                    <p>Content extraction failed. This could be due to content protection or API limitations.</p>
-                  ) : post.processError?.includes('429') ? (
-                    <p>Rate limit exceeded. Please wait a moment and try again.</p>
-                  ) : post.processError?.includes('authentication') ? (
-                    <p>This content requires authentication or is private. Please try public content instead.</p>
-                  ) : post.processError?.includes('URL') ? (
-                    <p>The URL format is invalid or not supported. Please check the URL and try again.</p>
-                  ) : (
-                    <p>There was an error processing this content: {post.processError || "Unknown error"}.</p>
-                  )}
-                  
-                  <div className="mt-3 p-3 border border-yellow-300 bg-yellow-50 rounded-md">
-                    <h4 className="font-medium text-yellow-800">Failed to extract content</h4>
-                    <p className="mt-1 text-sm text-yellow-700">
-                      Please try a different URL or check the source is accessible.
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center">
-                        <Eye className="h-3.5 w-3.5 mr-1" />
-                        View original content
-                      </a>
+          ) : isFailed ? (
+            <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Processing failed</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    {post.processError?.includes('422') ? (
+                      <p>Content extraction failed. This could be due to content protection or API limitations.</p>
+                    ) : post.processError?.includes('429') ? (
+                      <p>Rate limit exceeded. Please wait a moment and try again.</p>
+                    ) : post.processError?.includes('authentication') ? (
+                      <p>This content requires authentication or is private. Please try public content instead.</p>
+                    ) : post.processError?.includes('URL') ? (
+                      <p>The URL format is invalid or not supported. Please check the URL and try again.</p>
+                    ) : (
+                      <p>There was an error processing this content: {post.processError || "Unknown error"}.</p>
+                    )}
+                    
+                    <div className="mt-3 p-3 border border-yellow-300 bg-yellow-50 rounded-md">
+                      <h4 className="font-medium text-yellow-800">Failed to extract content</h4>
+                      <p className="mt-1 text-sm text-yellow-700">
+                        Please try a different URL or check the source is accessible.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center">
+                          <Eye className="h-3.5 w-3.5 mr-1" />
+                          View original content
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="mt-1 text-sm text-gray-700 space-y-2">
-            {post.content?.split('\n').map((paragraph, i) => (
-              paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
-            )).slice(0, expanded ? undefined : 5)}
-            
-            {!expanded && post.content && post.content.split('\n').length > 5 && (
-              <button 
-                onClick={toggleExpand}
-                className="text-[#0A66C2] hover:text-blue-700 font-medium text-sm"
-              >
-                Read more...
-              </button>
-            )}
-            
-            {expanded && (
-              <button 
-                onClick={toggleExpand}
-                className="text-[#0A66C2] hover:text-blue-700 font-medium text-sm"
-              >
-                Show less
-              </button>
-            )}
-          </div>
-        )}
+          ) : (
+            <div className="mt-1 text-sm text-gray-700 space-y-2">
+              {post.content?.split('\n').map((paragraph, i) => (
+                paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
+              )).slice(0, expanded ? undefined : 5)}
+              
+              {!expanded && post.content && post.content.split('\n').length > 5 && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent the full post dialog from opening
+                    toggleExpand();
+                  }}
+                  className="text-[#0A66C2] hover:text-blue-700 font-medium text-sm"
+                >
+                  Read more...
+                </button>
+              )}
+              
+              {expanded && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent the full post dialog from opening
+                    toggleExpand();
+                  }}
+                  className="text-[#0A66C2] hover:text-blue-700 font-medium text-sm"
+                >
+                  Show less
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         
         {!isProcessing && !isFailed && (
           <div className="mt-4 flex flex-col space-y-3">
@@ -439,10 +460,11 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                     key={category} 
                     category={category}
                     onClick={() => {}}
+                    className="category-tag" // Add a class to identify category tags
                   />
                 ))
               ) : (
-                <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800 category-tag">
                   <Tag className="h-3 w-3 mr-1" />
                   No categories assigned
                 </div>
@@ -576,9 +598,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               </Button>
               <Button 
                 type="button" 
-                size="sm" 
+                size="sm"
                 onClick={handleSaveCategories}
-                disabled={updateCategoriesMutation.isPending}
+                disabled={updateCategoriesMutation.isPending || selectedCategories.length === 0}
               >
                 {updateCategoriesMutation.isPending ? (
                   <>
@@ -587,7 +609,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   </>
                 ) : (
                   <>
-                    <Check className="h-3.5 w-3.5 mr-1" />
+                    <Check className="h-4 w-4 mr-2" />
                     Save Changes
                   </>
                 )}
@@ -595,13 +617,14 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
+        
         {/* Delete Confirmation Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[400px]">
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle className="flex items-center text-red-600">
-                <AlertTriangle className="h-5 w-5 mr-2" /> Delete Post
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                Delete Post
               </DialogTitle>
               <DialogDescription>
                 Are you sure you want to delete this post? This action cannot be undone.
@@ -636,6 +659,72 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   </>
                 )}
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Full Post Dialog */}
+        <Dialog open={isFullPostDialogOpen} onOpenChange={setIsFullPostDialogOpen}>
+          <DialogContent className="sm:max-w-[680px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                {post.authorImage && (
+                  <img 
+                    src={post.authorImage} 
+                    alt={`${post.authorName || 'Author'}'s profile`}
+                    className="h-8 w-8 rounded-full mr-2"
+                  />
+                )}
+                {post.authorName || 'Post Content'}
+              </DialogTitle>
+              <DialogDescription>
+                {post.url}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 max-h-[70vh] overflow-y-auto">
+              <div className="text-sm text-gray-700 space-y-3">
+                {post.content?.split('\n').map((paragraph, i) => (
+                  paragraph ? <p key={i} className="mb-2">{paragraph}</p> : <br key={i} />
+                ))}
+              </div>
+              
+              {post.categories && post.categories.length > 0 && (
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-medium mb-2">Categories:</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {post.categories.map(category => (
+                      <Badge key={category} variant="outline" className="text-xs">
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFullPostDialogOpen(false)}
+              >
+                Close
+              </Button>
+              <a
+                href={post.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block"
+              >
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50"
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1" />
+                  View Original
+                </Button>
+              </a>
             </DialogFooter>
           </DialogContent>
         </Dialog>
