@@ -173,35 +173,13 @@ export default function Home() {
   // Get the most recent post that respects category filter
   const mostRecentPost = getMostRecentPost();
   
-  // Filter posts by category and search term - exclude the most recent post from this list
+  // Filter posts by category only - exclude the most recent post from this list
   const filteredPosts = posts.filter((post) => {
     // Skip the most recent post since it's displayed separately
     if (mostRecentPost.length > 0 && post.id === mostRecentPost[0].id) return false;
     
     // Skip posts that are still processing or failed
     if (post.processingStatus !== "completed") return false;
-    
-    // Apply search filter if there's a search term
-    if (searchTerm.trim()) {
-      if (searchBy === "keyword") {
-        // Search in post content
-        const contentLower = (post.content || "").toLowerCase();
-        const summaryLower = (post.summary || "").toLowerCase();
-        const searchTermLower = searchTerm.toLowerCase();
-        
-        if (!contentLower.includes(searchTermLower) && !summaryLower.includes(searchTermLower)) {
-          return false;
-        }
-      } else if (searchBy === "author") {
-        // Search by author name
-        const authorLower = (post.authorName || "").toLowerCase();
-        const searchTermLower = searchTerm.toLowerCase();
-        
-        if (!authorLower.includes(searchTermLower)) {
-          return false;
-        }
-      }
-    }
     
     // Apply category filter
     if (selectedCategories.length === 0) return true;
@@ -233,13 +211,35 @@ export default function Home() {
       return acc;
     }
     
-    const categoryPosts = posts.filter(post => 
+    // First filter posts by category and completion status
+    let categoryPosts = posts.filter(post => 
       // Include only completed posts with this category
       post.categories && 
       Array.isArray(post.categories) && 
       post.categories?.includes(category) && 
       post.processingStatus === "completed"
     );
+    
+    // Then apply search filter if there's a search term
+    if (searchTerm.trim()) {
+      categoryPosts = categoryPosts.filter(post => {
+        if (searchBy === "keyword") {
+          // Search in post content
+          const contentLower = (post.content || "").toLowerCase();
+          const summaryLower = (post.summary || "").toLowerCase();
+          const searchTermLower = searchTerm.toLowerCase();
+          
+          return contentLower.includes(searchTermLower) || summaryLower.includes(searchTermLower);
+        } else if (searchBy === "author") {
+          // Search by author name
+          const authorLower = (post.authorName || "").toLowerCase();
+          const searchTermLower = searchTerm.toLowerCase();
+          
+          return authorLower.includes(searchTermLower);
+        }
+        return true;
+      });
+    }
     
     if (categoryPosts.length > 0) {
       acc[category] = categoryPosts;
