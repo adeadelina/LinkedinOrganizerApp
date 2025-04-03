@@ -457,6 +457,14 @@ export default function Home() {
                                       dialogRef.id = `post-dialog-${post.id}`;
                                       dialogRef.className = 'fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center';
                                       
+                                      // Add click handler to close when clicking outside the dialog content
+                                      dialogRef.addEventListener('click', (event: MouseEvent) => {
+                                        // Only close if clicking the backdrop (dialogRef itself) and not its children
+                                        if (event.target === dialogRef) {
+                                          document.body.removeChild(dialogRef);
+                                        }
+                                      });
+                                      
                                       const dialogContent = document.createElement('div');
                                       dialogContent.className = 'bg-white rounded-lg max-w-[680px] max-h-[80vh] overflow-y-auto w-full m-4';
                                       
@@ -653,7 +661,8 @@ export default function Home() {
                                         category={cat} 
                                         className="text-xs category-tag"
                                         onClick={(e) => {
-                                          e.stopPropagation(); // Prevent card click
+                                          // Make sure e is defined before using it
+                                          if (e) e.stopPropagation(); // Prevent card click
                                           // Toggle category selection
                                           if (selectedCategories.includes(cat)) {
                                             setSelectedCategories(selectedCategories.filter(c => c !== cat));
@@ -674,7 +683,7 @@ export default function Home() {
                                       size="sm"
                                       className="text-xs"
                                       onClick={(e) => {
-                                        e.stopPropagation(); // Prevent card click
+                                        if (e) e.stopPropagation(); // Prevent card click
                                         // Find the edit button by ID and click it
                                         document.getElementById(`edit-categories-${post.id}`)?.click();
                                       }}
@@ -687,7 +696,7 @@ export default function Home() {
                                       href={post.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()} // Prevent card click
+                                      onClick={(e) => e && e.stopPropagation()} // Prevent card click
                                     >
                                       <Button variant="ghost" size="sm" className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

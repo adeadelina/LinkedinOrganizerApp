@@ -1,9 +1,10 @@
+import React from "react";
 import { cn } from "@/lib/utils";
 
 interface CategoryFilterProps {
   category: string;
   className?: string;
-  onClick?: () => void;
+  onClick?: (e?: React.MouseEvent) => void;
   isSelected?: boolean;
 }
 
