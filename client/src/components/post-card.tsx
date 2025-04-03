@@ -517,7 +517,19 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                       {category}
                     </label>
                     {selectedCategories.includes(category) && (
-                      <Badge variant="secondary" className="ml-auto">Selected</Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="ml-auto h-6 p-1 hover:bg-red-50 hover:text-red-500" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleCategoryChange(category);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Remove {category}</span>
+                      </Button>
                     )}
                   </div>
                 ))}
@@ -545,7 +557,19 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                         </label>
                         <Badge variant="outline" className="bg-green-100">New</Badge>
                         {selectedCategories.includes(category) && (
-                          <Badge variant="secondary" className="ml-1">Selected</Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 p-1 hover:bg-red-50 hover:text-red-500" 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleCategoryChange(category);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Remove {category}</span>
+                          </Button>
                         )}
                       </div>
                     ))}
