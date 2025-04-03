@@ -1,27 +1,32 @@
-import { useState } from "react";
-import { LayoutDashboard, PlusCircle, Search, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LayoutDashboard, PlusCircle, Search, Filter, User, FileText } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface SidebarProps {
   className?: string;
   categories: string[];
   selectedCategories: string[];
   onCategoryChange: (category: string) => void;
+  onSearch?: (searchTerm: string, searchBy: "keyword" | "author") => void;
 }
 
 export function Sidebar({ 
   className, 
   categories = [], 
   selectedCategories = [],
-  onCategoryChange 
+  onCategoryChange,
+  onSearch
 }: SidebarProps) {
   const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [searchBy, setSearchBy] = useState<"keyword" | "author">("keyword");
   
   const filteredCategories = searchTerm
     ? categories.filter(category => 
@@ -32,6 +37,18 @@ export function Sidebar({
   const displayedCategories = showAllCategories 
     ? filteredCategories
     : filteredCategories.slice(0, 10);
+    
+  // When search term or search type changes, trigger the search
+  useEffect(() => {
+    if (onSearch && searchTerm.trim()) {
+      // Debounce the search with a slight delay
+      const debounceTimer = setTimeout(() => {
+        onSearch(searchTerm, searchBy);
+      }, 300);
+      
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [searchTerm, searchBy, onSearch]);
 
   const isActive = (path: string) => location === path;
   
@@ -79,18 +96,55 @@ export function Sidebar({
             </Link>
           
             {/* Search Box */}
-            <div className="px-2 pt-3">
+            <div className="px-2 pt-3 space-y-2">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-gray-400" />
                 </div>
                 <Input
                   type="text"
-                  placeholder="Search posts..."
+                  placeholder={searchBy === "keyword" ? "Search by content..." : "Search by author..."}
                   className="block w-full pl-10 pr-3 py-2"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+              </div>
+              
+              {/* Search Toggle */}
+              <div className="flex items-center justify-between px-1 py-2">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="search-mode"
+                    checked={searchBy === "author"}
+                    onCheckedChange={(checked) => setSearchBy(checked ? "author" : "keyword")}
+                  />
+                  <Label 
+                    htmlFor="search-mode" 
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    {searchBy === "keyword" ? (
+                      <div className="flex items-center">
+                        <FileText className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                        <span>By content</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <User className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                        <span>By author</span>
+                      </div>
+                    )}
+                  </Label>
+                </div>
+                {searchTerm && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
             
