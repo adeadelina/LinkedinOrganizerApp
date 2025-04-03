@@ -472,7 +472,11 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   variant="outline" 
                   size="sm" 
                   className="text-xs"
-                  onClick={() => setIsCategoryDialogOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Stop event from bubbling up to parent
+                    e.preventDefault(); // Prevent default behavior
+                    setIsCategoryDialogOpen(true);
+                  }}
                 >
                   <Edit2 className="h-3.5 w-3.5 mr-1" />
                   Edit Categories
@@ -483,7 +487,11 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   variant="outline" 
                   size="sm" 
                   className="text-xs text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={() => setIsDeleteDialogOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Stop event from bubbling up to parent
+                    e.preventDefault(); // Prevent default behavior
+                    setIsDeleteDialogOpen(true);
+                  }}
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-1" />
                   Delete
@@ -494,6 +502,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Stop event from bubbling up to parent
+                  }}
                 >
                   <Button 
                     variant="ghost" 
@@ -533,7 +544,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         
         {/* Category Edit Dialog */}
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent 
+            className="sm:max-w-[500px]"
+            onPointerDownOutside={() => setIsCategoryDialogOpen(false)}>
             <DialogHeader>
               <DialogTitle>Manage Categories</DialogTitle>
               <DialogDescription>
@@ -760,7 +773,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         
         {/* Delete Confirmation Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent 
+            className="sm:max-w-[425px]"
+            onPointerDownOutside={() => setIsDeleteDialogOpen(false)}>
             <DialogHeader>
               <DialogTitle className="flex items-center text-red-600">
                 <AlertTriangle className="h-5 w-5 mr-2" />
