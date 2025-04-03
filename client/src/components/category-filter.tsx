@@ -1,14 +1,24 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
 
 interface CategoryFilterProps {
   category: string;
   className?: string;
   onClick?: (e?: React.MouseEvent) => void;
   isSelected?: boolean;
+  onRemove?: (e: React.MouseEvent) => void;
+  removable?: boolean;
 }
 
-export function CategoryFilter({ category, className, onClick, isSelected = false }: CategoryFilterProps) {
+export function CategoryFilter({ 
+  category, 
+  className, 
+  onClick, 
+  isSelected = false, 
+  onRemove,
+  removable = false
+}: CategoryFilterProps) {
   // Define category styles based on the category name - using hash based algorithm to ensure consistent colors
   const getCategoryStyles = (category: string) => {
     // Predefined categories with specific colors
@@ -55,10 +65,17 @@ export function CategoryFilter({ category, className, onClick, isSelected = fals
     return colorOptions[colorIndex];
   };
 
+  const handleRemoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRemove) {
+      onRemove(e);
+    }
+  };
+
   return (
     <span 
       className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium gap-1",
         getCategoryStyles(category),
         isSelected && "ring-2 ring-offset-1",
         onClick && "cursor-pointer hover:opacity-90 transition-opacity",
@@ -82,6 +99,16 @@ export function CategoryFilter({ category, className, onClick, isSelected = fals
             clipRule="evenodd" 
           />
         </svg>
+      )}
+      {removable && (
+        <button 
+          className="inline-flex h-3 w-3 items-center justify-center rounded-full ml-1 hover:bg-white/30 focus:outline-none focus:ring-1 focus:ring-offset-1"
+          onClick={handleRemoveClick}
+          title={`Remove ${category} from this post`}
+        >
+          <X className="h-2 w-2" />
+          <span className="sr-only">Remove {category}</span>
+        </button>
       )}
     </span>
   );

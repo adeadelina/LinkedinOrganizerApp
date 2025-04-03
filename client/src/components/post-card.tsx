@@ -517,7 +517,23 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <CategoryFilter 
                     key={category} 
                     category={category}
-                    onClick={() => {}}
+                    onClick={() => {
+                      setSelectedCategories(prev => {
+                        // If category is already selected, remove it
+                        if (prev.includes(category)) {
+                          return prev.filter(c => c !== category);
+                        }
+                        return prev;
+                      });
+                      setIsCategoryDialogOpen(true);
+                    }}
+                    removable={true}
+                    onRemove={() => {
+                      // Remove category from post
+                      setSelectedCategories(prev => prev.filter(c => c !== category));
+                      // Save changes immediately
+                      updateCategoriesMutation.mutate();
+                    }}
                     className="category-tag" // Add a class to identify category tags
                   />
                 ))
