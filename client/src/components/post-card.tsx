@@ -227,56 +227,26 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               />
             ) : (
               <span className="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-medium">
-                {post.authorName?.[0] || (post.url?.includes("linkedin.com") ? "L" : "U")}
+                {(post.authorName && post.authorName !== "LinkedIn User") 
+                  ? post.authorName[0]
+                  : (post.url?.includes("linkedin.com") ? "L" : "U")}
               </span>
             )}
           </div>
           <div className="ml-4 flex-1">
             <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center">
-                  <h3 className="text-sm font-medium text-gray-900">
-                    {post.authorName ? post.authorName : (post.url?.includes("linkedin.com") ? "LinkedIn Author" : "Content Author")}
-                  </h3>
-                  
-                  {/* Re-extract author button - show only for LinkedIn posts with generic author names */}
-                  {post.url?.includes("linkedin.com") && 
-                   (!post.authorName || post.authorName === "LinkedIn Author" || post.authorName === "Content Author") && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6 ml-1"
-                            onClick={() => reExtractAuthorMutation.mutate()}
-                            disabled={reExtractAuthorMutation.isPending}
-                          >
-                            {reExtractAuthorMutation.isPending ? (
-                              <Loader2 className="h-3.5 w-3.5 text-blue-600 animate-spin" />
-                            ) : (
-                              <Edit2 className="h-3.5 w-3.5 text-amber-600" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Extract actual author name</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
+                <h3 className="text-sm font-medium text-gray-900">
+                  {post.authorName && post.authorName !== "LinkedIn User" 
+                    ? post.authorName 
+                    : post.url?.includes("linkedin.com") 
+                      ? "LinkedIn Author" 
+                      : "Content Author"}
+                </h3>
                 <p className="text-xs text-gray-500">
                   {getTimeElapsed(post.createdAt)}
                 </p>
               </div>
-              
-              {/* Show status of author extraction if currently in progress */}
-              {reExtractAuthorMutation.isPending && (
-                <span className="text-xs text-blue-600 animate-pulse">
-                  Extracting author info...
-                </span>
-              )}
             </div>
           </div>
         </div>
