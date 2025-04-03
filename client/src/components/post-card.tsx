@@ -5,7 +5,17 @@ import { CategoryFilter } from "@/components/category-filter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Eye, Loader2, Tag, Plus, Edit2, X, Trash2, AlertTriangle } from "lucide-react";
+import { 
+  AlertTriangle, 
+  Check, 
+  Edit2, 
+  Eye, 
+  Loader2, 
+  Plus, 
+  Tag, 
+  Trash2, 
+  X 
+} from "lucide-react";
 import type { Post } from "@shared/schema";
 import { MAX_CATEGORIES_PER_POST } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -264,26 +274,14 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   return (
     <div className="border-t border-gray-200">
       <div 
-        className="px-4 py-4 sm:px-6 border-b border-gray-200 relative cursor-pointer"
-        onClick={(e) => {
-          // Only open the full post dialog if not clicking on a button or category tag
-          const target = e.target as HTMLElement;
-          const isButton = target.closest('button') || target.closest('a');
-          const isCategoryTag = target.closest('.category-tag');
-          const isDialog = target.closest('[role="dialog"]');
-          
-          // Debug what is being clicked
-          console.log("Element clicked:", target.tagName, target.className);
-          
-          // Always open the dialog for completed posts
-          if (!isButton && !isCategoryTag && !isDialog && !isProcessing && !isFailed) {
-            console.log("Opening dialog for post:", post.id);
-            setIsFullPostDialogOpen(true);
-          }
-        }}
+        className="px-4 py-4 sm:px-6 border-b border-gray-200 relative"
+        id={`post-card-${post.id}`}
       >
         {/* Content that should be clickable */}
-        <div className="relative cursor-pointer">
+        <div 
+          className="relative cursor-pointer"
+          onClick={() => !isProcessing && !isFailed && setIsFullPostDialogOpen(true)}
+        >
           <div className="flex items-center mb-4">
             <div className="flex-shrink-0">
               {post.authorImage ? (
@@ -446,6 +444,16 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   Delete
                 </Button>
                 
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50"
+                  onClick={() => setIsFullPostDialogOpen(true)}
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1" />
+                  Full View
+                </Button>
+
                 <a 
                   href={post.url}
                   target="_blank"
@@ -458,7 +466,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                     className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50"
                   >
                     <Eye className="h-3.5 w-3.5 mr-1" />
-                    View
+                    LinkedIn
                   </Button>
                 </a>
               </div>
@@ -753,7 +761,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50"
                 >
                   <Eye className="h-3.5 w-3.5 mr-1" />
-                  View Original
+                  Original Link
                 </Button>
               </a>
             </DialogFooter>
