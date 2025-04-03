@@ -606,7 +606,13 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         
         {/* Category Edit Dialog */}
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent 
+            className="sm:max-w-[500px]"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             <DialogHeader>
               <DialogTitle>Manage Categories</DialogTitle>
               <DialogDescription>
@@ -757,14 +763,31 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                 <div className="flex gap-2">
                   <Input
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
+                    onChange={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setNewCategory(e.target.value);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onFocus={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                    }}
                     placeholder="Enter new category"
                     className="flex-1"
                   />
                   <Button 
                     type="button" 
                     size="sm"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       if (newCategory.trim()) {
                         // Add to new categories list
                         setNewCategories(prev => [...prev, newCategory.trim()]);
