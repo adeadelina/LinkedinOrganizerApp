@@ -49,6 +49,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   
   // State for new category input, delete confirmation, and full post view
   const [newCategory, setNewCategory] = useState("");
+  const [directNewCategory, setDirectNewCategory] = useState(""); // For adding categories directly from post card
   const [newCategories, setNewCategories] = useState<string[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isFullPostDialogOpen, setIsFullPostDialogOpen] = useState(false);
@@ -309,17 +310,18 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
       <div 
         className="px-4 py-4 sm:px-6 border-b border-gray-200 relative cursor-pointer"
         onClick={(e) => {
-          // Only open the full post dialog if not clicking on a button or category tag
+          // Only open the full post dialog if not clicking on a button, category tag, or input field
           const target = e.target as HTMLElement;
           const isButton = target.closest('button') || target.closest('a');
           const isCategoryTag = target.closest('.category-tag');
           const isDialog = target.closest('[role="dialog"]');
+          const isInput = target.tagName === 'INPUT' || target.closest('input');
           
           // Debug what is being clicked
           console.log("Element clicked:", target.tagName, target.className);
           
-          // Always open the dialog for completed posts
-          if (!isButton && !isCategoryTag && !isDialog && !isProcessing && !isFailed) {
+          // Always open the dialog for completed posts, except when clicking on specific elements
+          if (!isButton && !isCategoryTag && !isDialog && !isInput && !isProcessing && !isFailed) {
             console.log("Opening dialog for post:", post.id);
             setIsFullPostDialogOpen(true);
           }
@@ -542,6 +544,50 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   <Tag className="h-3 w-3 mr-1" />
                   No categories assigned
                 </div>
+              )}
+              
+              {/* Direct category input field (if categories aren't maxed out) */}
+              {post.categories && post.categories.length < MAX_CATEGORIES_PER_POST && (
+                <form 
+                  className="inline-flex items-center gap-1"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (directNewCategory.trim()) {
+                      // Add to selected categories
+                      setSelectedCategories(prev => {
+                        // Don't add if already exists
+                        if (prev.includes(directNewCategory.trim())) {
+                          return prev;
+                        }
+                        return [...prev, directNewCategory.trim()];
+                      });
+                      
+                      // Update available categories if it's a new one
+                      if (!availableCategories.includes(directNewCategory.trim())) {
+                        setAvailableCategories(prev => [...prev, directNewCategory.trim()]);
+                      }
+                      
+                      // Clear input
+                      setDirectNewCategory('');
+                      
+                      // Save changes immediately
+                      updateCategoriesMutation.mutate();
+                    }
+                  }}
+                >
+                  <Input
+                    id={`add-category-input-${post.id}`}
+                    value={directNewCategory}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setDirectNewCategory(e.target.value);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder="+ Add category"
+                    className="h-6 text-xs w-28 min-w-24 bg-gray-50 border-dashed"
+                  />
+                </form>
               )}
             </div>
           </div>
