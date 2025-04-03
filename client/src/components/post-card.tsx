@@ -682,7 +682,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         <Dialog open={isFullPostDialogOpen} onOpenChange={setIsFullPostDialogOpen}>
           <DialogContent 
             className="sm:max-w-[680px]"
-            onPointerDownOutside={() => setIsFullPostDialogOpen(false)}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+              setIsFullPostDialogOpen(false);
+            }}
           >
             <DialogHeader>
               <DialogTitle className="flex items-center">
