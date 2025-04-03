@@ -33,6 +33,15 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onRefetch }: PostCardProps) {
+  // Log each post as it's rendered
+  console.log(`Rendering post ${post.id}:`, {
+    id: post.id,
+    url: post.url,
+    hasContent: Boolean(post.content),
+    categories: post.categories,
+    author: post.authorName,
+    processingStatus: post.processingStatus
+  });
   const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
@@ -255,7 +264,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   return (
     <div className="border-t border-gray-200">
       <div 
-        className="px-4 py-4 sm:px-6 border-b border-gray-200 relative"
+        className="px-4 py-4 sm:px-6 border-b border-gray-200 relative cursor-pointer"
         onClick={(e) => {
           // Only open the full post dialog if not clicking on a button or category tag
           const target = e.target as HTMLElement;
@@ -263,9 +272,12 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           const isCategoryTag = target.closest('.category-tag');
           const isDialog = target.closest('[role="dialog"]');
           
+          // Debug what is being clicked
+          console.log("Element clicked:", target.tagName, target.className);
+          
+          // Always open the dialog for completed posts
           if (!isButton && !isCategoryTag && !isDialog && !isProcessing && !isFailed) {
-            console.log("Click on post card", post.id, "Content:", post.content ? "Yes" : "No");
-            // Open dialog even if content is empty to show post details
+            console.log("Opening dialog for post:", post.id);
             setIsFullPostDialogOpen(true);
           }
         }}
