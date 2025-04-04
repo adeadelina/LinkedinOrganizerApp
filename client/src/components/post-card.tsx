@@ -89,8 +89,14 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
 
   const updateCategoriesMutation = useMutation({
     mutationFn: async () => {
-      const uniqueSelectedCategories = [...new Set(selectedCategories)];
-      const uniqueNewCategories = [...new Set(newCategories)];
+      // Filter out duplicates manually instead of using Set
+      const uniqueSelectedCategories = selectedCategories.filter(
+        (category, index) => selectedCategories.indexOf(category) === index
+      );
+      
+      const uniqueNewCategories = newCategories.filter(
+        (category, index) => newCategories.indexOf(category) === index
+      );
       
       return apiRequest(
         `/api/posts/${post.id}/update-categories`,
@@ -232,6 +238,16 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
             )).slice(0, expanded ? undefined : 5)}
             
+            {expanded && post.postImage && (
+              <div className="mt-3 mb-4">
+                <img
+                  src={post.postImage}
+                  alt="Post attachment"
+                  className="max-w-full h-auto rounded-md border border-gray-200"
+                />
+              </div>
+            )}
+            
             {!expanded && post.content && post.content.split('\n').length > 5 && (
               <button 
                 onClick={(e) => {
@@ -240,7 +256,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                 }}
                 className="text-blue-600 hover:text-blue-700 font-medium text-sm"
               >
-                Read more...
+                Read more{post.postImage ? ' and view image' : ''}...
               </button>
             )}
             
@@ -312,6 +328,15 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 max-h-[70vh] overflow-y-auto">
+              {post.postImage && (
+                <div className="mb-4">
+                  <img
+                    src={post.postImage}
+                    alt="Post attachment"
+                    className="max-w-full h-auto rounded-md border border-gray-200"
+                  />
+                </div>
+              )}
               {post.content?.split('\n').map((paragraph, i) => (
                 paragraph ? <p key={i} className="mb-2">{paragraph}</p> : <br key={i} />
               ))}
