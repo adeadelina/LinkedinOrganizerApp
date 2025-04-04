@@ -141,9 +141,11 @@ export async function scrapeLinkedInPost(url: string): Promise<{
           authorName = schemaData.author.name || authorName;
           authorImage = schemaData.author.image["url"] || authorImage;
         }
-
         // For posts type articles where there is no "author" but there's a creator
-        if (schemaData.creator && schemaData.creator["@type"] === "Person") {
+        else if (
+          schemaData.creator &&
+          schemaData.creator["@type"] === "Person"
+        ) {
           authorName = schemaData.creator.name || authorName;
           authorImage = schemaData.creator.image["url"] || authorImage;
         }
@@ -170,6 +172,12 @@ export async function scrapeLinkedInPost(url: string): Promise<{
         if (!content || content.length < 10) {
           console.log("No meaningful content found in schema data");
           content = "No content available";
+        }
+
+        //Extract attached image from schema
+        let postImage = "";
+        if (schemaData.image && schemaData.image["@type"] === "ImageObject") {
+          postImage = schemaData.image.url || postImage;
         }
 
         // Extract date if available
