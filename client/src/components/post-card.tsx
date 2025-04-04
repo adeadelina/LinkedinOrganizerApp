@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,12 +68,12 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         description: "The post has been successfully deleted.",
       });
       setIsDeleteDialogOpen(false);
-      
+
       queryClient.invalidateQueries({ 
         queryKey: ['/api/posts'],
         refetchType: 'active',
       });
-      
+
       if (onRefetch) onRefetch();
     },
     onError: (error) => {
@@ -91,7 +90,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
     mutationFn: async () => {
       const uniqueSelectedCategories = [...new Set(selectedCategories)];
       const uniqueNewCategories = [...new Set(newCategories)];
-      
+
       return apiRequest(
         `/api/posts/${post.id}/update-categories`,
         { 
@@ -111,7 +110,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
       });
       setIsCategoryDialogOpen(false);
       setNewCategories([]);
-      
+
       queryClient.invalidateQueries({ 
         queryKey: ['/api/categories'],
         refetchType: 'active',
@@ -120,7 +119,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
         queryKey: ['/api/posts'],
         refetchType: 'active',
       });
-      
+
       setTimeout(() => {
         refetchAvailableCategories()
           .then(() => {
@@ -130,7 +129,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             }, 500);
           });
       }, 100);
-      
+
       if (onRefetch) onRefetch();
     },
     onError: (error) => {
@@ -166,18 +165,18 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
 
   const getTimeElapsed = (date?: Date | string | null) => {
     if (!date) return "less than a minute ago";
-    
+
     const then = new Date(date);
     const now = new Date();
     const diffMs = now.getTime() - then.getTime();
     const diffMins = Math.round(diffMs / 60000);
-    
+
     if (diffMins < 1) return "less than a minute ago";
     if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-    
+
     const diffHours = Math.round(diffMins / 60);
     if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-    
+
     const diffDays = Math.round(diffHours / 24);
     return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
   };
@@ -231,7 +230,13 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             {post.content?.split('\n').map((paragraph, i) => (
               paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
             )).slice(0, expanded ? undefined : 5)}
-            
+
+            {expanded && post.postImage && (
+              <div className="mt-4">
+                <img src={post.postImage} alt="Post content" className="max-w-full rounded-lg" />
+              </div>
+            )}
+
             {!expanded && post.content && post.content.split('\n').length > 5 && (
               <button 
                 onClick={(e) => {
@@ -243,7 +248,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                 Read more...
               </button>
             )}
-            
+
             {expanded && (
               <button 
                 onClick={(e) => {

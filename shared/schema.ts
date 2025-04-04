@@ -59,6 +59,7 @@ export const posts = pgTable("posts", {
   confidence: text("confidence"), // Confidence level in categorization (0-1) as string
   processError: text("process_error"), // Error message if processing failed
   processingStatus: text("processing_status").notNull().default("processing"), // 'processing', 'extracting', 'analyzing', 'completed', 'failed'
+  postImage: text("post_image"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
