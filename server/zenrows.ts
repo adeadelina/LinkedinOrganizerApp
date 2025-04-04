@@ -178,7 +178,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
         //Extract attached image from schema
         let postImage = "";
         if (schemaData.image && schemaData.image["@type"] === "ImageObject") {
-          postImage = schemaData.image.url || postImage;
+          postImage = schemaData.image["url"];
         }
 
         // Extract date if available
@@ -192,7 +192,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
         }
 
         console.log(
-          `Extracted from schema: Author: "${authorName}", Content length: ${content.length}`,
+          `Extracted from schema: Author: "${authorName}", Content length: ${content.length}. Post image link: "${postImage}"`,
         );
 
         return {
@@ -281,7 +281,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
           authorImage: extractedAuthorImage,
           content: extractedContent,
           publishedDate,
-          postImage: "",
+          postImage,
         };
       }
     }

@@ -173,6 +173,7 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
   authorImage: string;
   content: string;
   publishedDate: Date;
+  postImage: string;
 }> {
   // Input validation
   if (!url || !url.trim()) {
@@ -210,6 +211,7 @@ export async function extractLinkedInPostInfo(url: string): Promise<{
       authorImage: extractedData.authorImage,
       content: extractedData.content,
       publishedDate: extractedData.publishedDate,
+      postImage: extractedData.postImage || '',
     };
   } catch (error: any) {
     console.error("Error extracting post info:", error);
@@ -296,6 +298,7 @@ export async function extractSubstackInfo(url: string): Promise<{
   authorImage: string;
   content: string;
   publishedDate: Date;
+  postImage: string;
 }> {
   // Input validation
   if (!url || !url.trim()) {
@@ -369,7 +372,8 @@ export async function extractSubstackInfo(url: string): Promise<{
       authorName: result.authorName || 'Substack Author',
       authorImage: '', // No image extraction for Substack
       content: fullContent,
-      publishedDate: publishedDate
+      publishedDate: publishedDate,
+      postImage: '' // No image extraction for Substack
     };
   } catch (error: any) {
     console.error("Error extracting Substack info:", error);

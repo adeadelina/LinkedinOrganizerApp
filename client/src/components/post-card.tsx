@@ -317,6 +317,11 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 max-h-[70vh] overflow-y-auto">
+              {post.postImage && (
+                <div className="mb-4">
+                  <img src={post.postImage} alt="Post content" className="max-w-full rounded-lg" />
+                </div>
+              )}
               {post.content?.split('\n').map((paragraph, i) => (
                 paragraph ? <p key={i} className="mb-2">{paragraph}</p> : <br key={i} />
               ))}

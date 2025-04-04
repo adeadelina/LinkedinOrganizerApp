@@ -533,12 +533,12 @@ async function processContentPost(postId: number, url: string): Promise<void> {
         authorImage: extractedInfo.authorImage || "",
         content: extractedInfo.content,
         publishedDate: extractedInfo.publishedDate || new Date(),
-        postImage: extractedInfo.postImage ?? "",
+        postImage: extractedInfo.postImage || "",
         processingStatus: "analyzing",
       });
 
       console.log(
-        `[Post ${postId}] Successfully extracted content (${extractedInfo.content.length} characters)`,
+        `[Post ${postId}] Successfully extracted content (${extractedInfo.content.length} characters)${extractedInfo.postImage ? ', with post image: ' + extractedInfo.postImage : ', no post image found'}`,
       );
     } catch (extractError: any) {
       console.error(`[Post ${postId}] Extraction error:`, extractError);
