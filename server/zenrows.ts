@@ -85,7 +85,6 @@ export async function scrapeLinkedInPost(url: string): Promise<{
   authorImage: string;
   content: string;
   publishedDate: Date;
-  postImage?: string;
 }> {
   try {
     // Use the original URL as requested
@@ -200,7 +199,6 @@ export async function scrapeLinkedInPost(url: string): Promise<{
           authorImage,
           content,
           publishedDate,
-          postImage,
         };
       }
 
@@ -248,15 +246,11 @@ export async function scrapeLinkedInPost(url: string): Promise<{
 
       // If we have both author and content, return the extracted data
       if (authorName && content && content.length > 20) {
-        // Get post image from response data if available
-        const postImage = responseData.postImage || "";
-        
         return {
           authorName,
           authorImage,
           content,
           publishedDate,
-          postImage,
         };
       }
 
@@ -278,15 +272,11 @@ export async function scrapeLinkedInPost(url: string): Promise<{
             ? extractPostContent(html) || "No content available"
             : content;
 
-        // Try to extract post image from HTML
-        const postImage = extractPostImage(html) || "";
-        
         return {
           authorName: extractedAuthorName,
           authorImage: extractedAuthorImage,
           content: extractedContent,
           publishedDate,
-          postImage,
         };
       }
     }
@@ -380,15 +370,11 @@ export async function scrapeLinkedInPost(url: string): Promise<{
         `Extracted from plaintext: Author: "${authorName}", Content length: ${content.length}`,
       );
 
-      // No post image in plaintext mode
-      const postImage = "";
-      
       return {
         authorName,
         authorImage,
         content,
         publishedDate,
-        postImage,
       };
     }
 
@@ -402,15 +388,11 @@ export async function scrapeLinkedInPost(url: string): Promise<{
     const content = extractPostContent(html) || "No content available";
     const publishedDate = extractPublishedDate(html) || new Date();
 
-    // Extract post image
-    const postImage = extractPostImage(html) || "";
-    
     return {
       authorName,
       authorImage,
       content,
       publishedDate,
-      postImage,
     };
   } catch (error: any) {
     console.error("Error scraping LinkedIn post:", error);
@@ -707,80 +689,6 @@ function extractAuthorImage(html: string): string | null {
     return "";
   } catch (error) {
     console.error("Error extracting author image:", error);
-    return "";
-  }
-}
-
-/**
- * Extract post images from HTML (not the author profile image)
- */
-function extractPostImage(html: string): string | null {
-  try {
-    console.log(`Attempting to extract post images from HTML`);
-
-    // First attempt - images inside feed content or post content containers
-    const contentImageRegex = /<div[^>]*(?:class|data-test-id)[^>]*(?:feed-shared-update|update-content|post-content)[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[^>]*>[\s\S]*?<\/div>/i;
-    let match = html.match(contentImageRegex);
-    
-    if (match && match[1]) {
-      console.log(`Found post image in content container: ${match[1].substring(0, 50)}...`);
-      return match[1];
-    }
-
-    // Second attempt - image from article preview or rich media
-    const richMediaRegex = /<div[^>]*(?:class|data-test-id)[^>]*(?:rich-media|article-preview|linked-content|shared-content)[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[^>]*>[\s\S]*?<\/div>/i;
-    match = html.match(richMediaRegex);
-    
-    if (match && match[1]) {
-      console.log(`Found post image in rich media: ${match[1].substring(0, 50)}...`);
-      return match[1];
-    }
-
-    // Third attempt - meta image tags (if not already used for profile)
-    const metaImageRegex = /<meta[^>]*(?:property="og:image"|name="twitter:image")[^>]*content="([^"]+)"[^>]*>/i;
-    match = html.match(metaImageRegex);
-    
-    if (match && match[1]) {
-      // Only use meta images if they seem content-related rather than profile-related
-      const url = match[1].toLowerCase();
-      if (!url.includes("profile") && !url.includes("avatar") && !url.includes("user")) {
-        console.log(`Found post image in meta tags: ${match[1].substring(0, 50)}...`);
-        return match[1];
-      }
-    }
-
-    // Fourth attempt - any large images in the post
-    const imgRegex = /<img[^>]*src="([^"]+)"[^>]*>/gi;
-    let m;
-    const potentialImages = [];
-    
-    while ((m = imgRegex.exec(html)) !== null) {
-      if (m[1] && typeof m[1] === "string") {
-        const url = m[1].toLowerCase();
-        
-        // Skip profile-related images
-        if (url.includes("profile") || url.includes("avatar") || 
-            url.includes("user") || url.includes("icon") || 
-            url.includes("logo") || url.includes("emoji")) {
-          continue;
-        }
-        
-        // Only collect non-tiny images
-        if (!url.includes("icon") && !url.includes("small") && !url.includes("tiny")) {
-          potentialImages.push(url);
-        }
-      }
-    }
-    
-    if (potentialImages.length > 0) {
-      console.log(`Found potential post image: ${potentialImages[0].substring(0, 50)}...`);
-      return potentialImages[0];
-    }
-
-    console.log("No post images found");
-    return "";
-  } catch (error) {
-    console.error("Error extracting post images:", error);
     return "";
   }
 }

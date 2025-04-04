@@ -53,7 +53,6 @@ export const posts = pgTable("posts", {
   authorName: text("author_name"),
   authorImage: text("author_image"),
   content: text("content"),
-  postImage: text("post_image"), // URL of an image attached to the post
   publishedDate: timestamp("published_date"),
   categories: text("categories").array(),
   summary: text("summary"), // Brief summary of the post content
@@ -68,7 +67,6 @@ export const insertPostSchema = createInsertSchema(posts).pick({
   authorName: true,
   authorImage: true,
   content: true,
-  postImage: true,
   publishedDate: true,
   categories: true,
   summary: true,
