@@ -74,6 +74,7 @@ export const insertPostSchema = createInsertSchema(posts).pick({
   confidence: true,
   processError: true,
   processingStatus: true,
+  postImage: true,
 });
 
 export const contentUrlSchema = z.object({
