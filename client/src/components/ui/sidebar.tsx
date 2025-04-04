@@ -40,9 +40,10 @@ export function Sidebar({
     
   // When search term or search type changes, trigger the search
   useEffect(() => {
-    if (onSearch && searchTerm.trim()) {
+    if (onSearch) {
       // Debounce the search with a slight delay
       const debounceTimer = setTimeout(() => {
+        // Pass the search term as is - this ensures empty search terms are also propagated
         onSearch(searchTerm, searchBy);
       }, 300);
       
@@ -140,7 +141,13 @@ export function Sidebar({
                     variant="ghost" 
                     size="sm" 
                     className="h-7 px-2 text-xs"
-                    onClick={() => setSearchTerm('')}
+                    onClick={() => {
+                      setSearchTerm('');
+                      // After clearing the search term, also trigger the onSearch callback with empty value
+                      if (onSearch) {
+                        onSearch('', searchBy);
+                      }
+                    }}
                   >
                     Clear
                   </Button>
