@@ -1,12 +1,20 @@
+
 {
-  "version": "7",
-  "dialect": "postgresql",
+  "version": "5",
+  "dialect": "pg",
   "entries": [
     {
       "idx": 0,
-      "version": "7",
-      "when": 1743604088045,
+      "version": "5",
+      "when": 1711569374917,
       "tag": "0000_peaceful_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1711569374918,
+      "tag": "0001_add_post_image",
       "breakpoints": true
     }
   ]

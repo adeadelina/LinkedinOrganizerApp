@@ -47,7 +47,7 @@ export class DbStorage implements IStorage {
     if (!userData.username) {
       throw new Error("Username is required to create a user");
     }
-    
+
     // Add createdAt date
     const createdAt = new Date();
 
@@ -61,7 +61,7 @@ export class DbStorage implements IStorage {
       picture: userData.picture || null,
       createdAt
     }).returning();
-    
+
     return result[0];
   }
 
@@ -69,33 +69,39 @@ export class DbStorage implements IStorage {
     // First get the existing user
     const existingUser = await this.getUser(id);
     if (!existingUser) return undefined;
-    
+
     // Create an object with only the fields to update
     const updates: Record<string, any> = {};
-    
+
     if (userData.username !== undefined) updates.username = userData.username;
     if (userData.password !== undefined) updates.password = userData.password;
     if (userData.name !== undefined) updates.name = userData.name;
     if (userData.email !== undefined) updates.email = userData.email;
     if (userData.googleId !== undefined) updates.googleId = userData.googleId;
     if (userData.picture !== undefined) updates.picture = userData.picture;
-    
+
     // If there are no updates, just return the existing user
     if (Object.keys(updates).length === 0) {
       return existingUser;
     }
-    
+
     const result = await db
       .update(users)
       .set(updates)
       .where(eq(users.id, id))
       .returning();
-    
+
     return result[0];
   }
 
   async getAllPosts(): Promise<Post[]> {
-    return await db.select().from(posts).orderBy(desc(posts.createdAt));
+    try {
+      const result = await db.select().from(posts).orderBy(desc(posts.createdAt));
+      return result;
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      throw error;
+    }
   }
 
   async getPostById(id: number): Promise<Post | undefined> {
@@ -110,7 +116,7 @@ export class DbStorage implements IStorage {
       .from(posts)
       .where(sql`${posts.categories} @> ARRAY[${category}]::text[]`)
       .orderBy(desc(posts.createdAt));
-    
+
     return result;
   }
 
@@ -125,7 +131,7 @@ export class DbStorage implements IStorage {
       .set(postUpdate)
       .where(eq(posts.id, id))
       .returning();
-    
+
     return result[0];
   }
 
@@ -134,7 +140,7 @@ export class DbStorage implements IStorage {
       .delete(posts)
       .where(eq(posts.id, id))
       .returning({ id: posts.id });
-    
+
     return result.length > 0;
   }
 
@@ -152,7 +158,7 @@ export class DbStorage implements IStorage {
     }
     return defaultCategories;
   }
-  
+
   async deleteCategory(category: string): Promise<string[]> {
     // Find the index of the category
     const index = defaultCategories.indexOf(category);
@@ -163,7 +169,7 @@ export class DbStorage implements IStorage {
     } else {
       console.log(`Category "${category}" not found in default categories, but will still be removed from all posts.`);
     }
-    
+
     // Always update all posts to remove this category, even if it wasn't in the default list
     // This handles edge cases like test categories or categories that were removed from the default list
     const allPosts = await this.getAllPosts();
@@ -175,7 +181,7 @@ export class DbStorage implements IStorage {
         console.log(`Removed category "${category}" from post ${post.id}`);
       }
     }
-    
+
     return defaultCategories;
   }
 }
