@@ -533,7 +533,7 @@ async function processContentPost(postId: number, url: string): Promise<void> {
         authorImage: extractedInfo.authorImage || "",
         content: extractedInfo.content,
         publishedDate: extractedInfo.publishedDate || new Date(),
-        postImage: extractedInfo.postImage || "",
+        postImage: extractedInfo.postImage ?? "",
         processingStatus: "analyzing",
       });
 
