@@ -314,7 +314,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           const target = e.target as HTMLElement;
           const isButton = target.closest('button') || target.closest('a');
           const isCategoryTag = target.closest('.category-tag');
-          const isDialog = target.closest('[role="dialog"]');
+          const isDialog = target.closest('[role="dialog"]') || target.closest('.dialog-overlay');
           const isInput = target.tagName === 'INPUT' || target.closest('input');
           const isForm = target.tagName === 'FORM' || target.closest('form');
           
