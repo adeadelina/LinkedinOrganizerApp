@@ -85,6 +85,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
   authorImage: string;
   content: string;
   publishedDate: Date;
+  postImage: string;
 }> {
   try {
     // Use the original URL as requested
@@ -199,6 +200,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
           authorImage,
           content,
           publishedDate,
+          postImage,
         };
       }
 
@@ -206,6 +208,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
       const authorName = responseData.authorName || "LinkedIn User";
       const authorImage = responseData.authorImage || "";
       const content = responseData.content || "No content available";
+      const postImage = responseData.postImage || "";
 
       // Process the date string if it exists
       let publishedDate = new Date();
@@ -251,6 +254,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
           authorImage,
           content,
           publishedDate,
+          postImage,
         };
       }
 
@@ -277,6 +281,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
           authorImage: extractedAuthorImage,
           content: extractedContent,
           publishedDate,
+          postImage: "",
         };
       }
     }
@@ -375,6 +380,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
         authorImage,
         content,
         publishedDate,
+        postImage: "",
       };
     }
 
@@ -393,6 +399,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
       authorImage,
       content,
       publishedDate,
+      postImage: "",
     };
   } catch (error: any) {
     console.error("Error scraping LinkedIn post:", error);
