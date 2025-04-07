@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Filter, Edit2 } from "lucide-react";
+import { Filter, Edit2, Grid, List, Columns, Rows, BookmarkPlus, Tag } from "lucide-react";
 import { PostCard } from "@/components/post-card";
+import { PostBookmarkCard } from "@/components/post-bookmark-card";
 import { CategoryFilter } from "@/components/category-filter";
 import { Navbar } from "@/components/navbar";
 import { apiRequest } from "@/lib/queryClient";
@@ -384,19 +385,47 @@ export default function Home() {
                     </div>
                   </CardHeader>
                   
-                  {/* List of analyzed content - only the most recent post */}
-                  <CardContent className="px-0">
+                  {/* List of analyzed content with grid layout */}
+                  <CardContent className="px-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="font-medium text-lg flex items-center gap-2">
+                        <BookmarkPlus className="h-5 w-5 text-primary" />
+                        <span>All bookmarks</span>
+                        <span className="text-sm font-normal text-gray-500">
+                          ({isLoadingPosts ? '...' : posts.filter(p => p.processingStatus === "completed").length})
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 flex items-center gap-1"
+                        >
+                          <Grid className="h-4 w-4" />
+                          <span className="sr-only sm:not-sr-only">Grid</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 flex items-center gap-1"
+                        >
+                          <List className="h-4 w-4" />
+                          <span className="sr-only sm:not-sr-only">List</span>
+                        </Button>
+                      </div>
+                    </div>
+                    
                     {isLoadingPosts ? (
                       <div className="p-6 text-center">Loading content...</div>
-                    ) : mostRecentPost.length === 0 ? (
+                    ) : posts.filter(p => p.processingStatus === "completed").length === 0 ? (
                       <div className="p-6 text-center text-gray-500">
                         No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
                       </div>
                     ) : (
-                      <div>
-                        {/* Display only the most recent post */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        {/* Display most recent post first */}
                         {mostRecentPost.map((post) => (
-                          <PostCard 
+                          <PostBookmarkCard 
                             key={post.id} 
                             post={post} 
                             onRefetch={refetchPosts}
@@ -436,7 +465,10 @@ export default function Home() {
                   {Object.keys(postsByCategory).length > 0 && (
                     <CardContent className="border-t border-gray-200 px-6 py-5">
                       <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-medium text-gray-900">Categories</h2>
+                        <div className="font-medium text-lg flex items-center gap-2">
+                          <Tag className="h-5 w-5 text-primary" />
+                          <span>Categories</span>
+                        </div>
                         {selectedCategories.length > 0 && (
                           <div className="flex items-center flex-wrap gap-1">
                             <span className="text-sm text-gray-500 mr-1">Filtered by:</span>
@@ -470,7 +502,22 @@ export default function Home() {
                       
                       {Object.entries(postsByCategory).map(([category, categoryPosts]) => (
                         <div key={category} className="mb-8">
-                          <h3 className="text-md font-medium text-gray-800 mb-4">{category}</h3>
+                          <h3 className="text-md font-medium text-gray-800 mb-4 flex items-center gap-2">
+                            <CategoryFilter 
+                              category={category}
+                              className="mr-2"
+                              onClick={() => {
+                                if (!selectedCategories.includes(category)) {
+                                  setSelectedCategories([...selectedCategories, category]);
+                                  refetchCategories();
+                                  refetchPosts();
+                                }
+                              }}
+                            />
+                            <span className="text-sm text-gray-500">
+                              ({categoryPosts.length} {categoryPosts.length === 1 ? 'bookmark' : 'bookmarks'})
+                            </span>
+                          </h3>
                           
                           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {categoryPosts.slice(0, 3).map((post) => (
