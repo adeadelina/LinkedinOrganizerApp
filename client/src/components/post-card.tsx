@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
 
 interface PostCardProps {
   post: Post;
@@ -88,7 +90,6 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
 
   const updateCategoriesMutation = useMutation({
     mutationFn: async () => {
-      // Create unique arrays without using Sets to avoid TypeScript issues
       const uniqueSelectedCategories = selectedCategories.filter(
         (category, index) => selectedCategories.indexOf(category) === index
       );
@@ -191,8 +192,8 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
   };
 
   return (
-    <div className="border-t border-gray-200">
-      <div className="px-4 py-4 sm:px-6 border-b border-gray-200">
+    <Card className="mb-4 overflow-hidden hover:shadow-lg transition-shadow duration-200">
+      <div className="p-6">
         <div 
           className="relative cursor-pointer"
           onClick={() => {
@@ -201,17 +202,17 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             }
           }}
         >
-          <div className="flex items-center mb-4">
+          <div className="flex items-center mb-6">
             <div className="flex-shrink-0">
               {post.authorImage ? (
                 <img 
                   src={post.authorImage} 
                   alt={`${post.authorName || 'Author'}'s profile`} 
-                  className="h-10 w-10 rounded-full"
+                  className="h-12 w-12 rounded-full border-2 border-gray-100"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-gray-500 font-medium">
+                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center border-2 border-gray-100">
+                  <span className="text-blue-600 font-semibold text-lg">
                     {post.authorName?.[0] || 'U'}
                   </span>
                 </div>
@@ -220,10 +221,10 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             <div className="ml-4 flex-1">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900">
                     {post.authorName || 'Unknown Author'}
                   </h3>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm text-gray-500">
                     {getTimeElapsed(post.createdAt)}
                   </p>
                 </div>
@@ -231,9 +232,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </div>
           </div>
 
-          <div className="mt-1 text-sm text-gray-700 space-y-2">
+          <div className="mt-4 text-gray-700 space-y-3 leading-relaxed">
             {post.content?.split('\n').map((paragraph, i) => (
-              paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
+              paragraph ? <p key={i} className="text-base">{paragraph}</p> : <br key={i} />
             )).slice(0, expanded ? undefined : 5)}
 
             {!expanded && post.content && post.content.split('\n').length > 5 && (
@@ -242,15 +243,15 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   e.stopPropagation();
                   toggleExpand();
                 }}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm mt-2 transition-colors duration-200"
               >
                 Read more...
               </button>
             )}
 
             {expanded && post.postImage && (
-              <div className="mt-4">
-                <img src={post.postImage} alt="Post content" className="max-w-full rounded-lg" />
+              <div className="mt-6">
+                <img src={post.postImage} alt="Post content" className="w-full rounded-lg shadow-md" />
               </div>
             )}
 
@@ -260,14 +261,14 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   e.stopPropagation();
                   toggleExpand();
                 }}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm mt-2 transition-colors duration-200"
               >
                 Show less
               </button>
             )}
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-6 flex flex-wrap gap-2">
             {post.categories?.map((category) => (
               <CategoryFilter 
                 key={category}
@@ -278,23 +279,24 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           </div>
         </div>
 
-        <div className="mt-4 flex justify-end space-x-2">
+        <div className="mt-6 flex justify-end space-x-3">
           <Button
             variant="outline"
             size="sm"
+            className="hover:bg-gray-50"
             onClick={() => setIsCategoryDialogOpen(true)}
           >
-            <Edit2 className="h-4 w-4 mr-1" />
+            <Edit2 className="h-4 w-4 mr-2" />
             Edit Categories
           </Button>
 
           <Button
             variant="outline"
             size="sm"
-            className="text-red-600"
+            className="text-red-600 hover:bg-red-50"
             onClick={() => setIsDeleteDialogOpen(true)}
           >
-            <Trash2 className="h-4 w-4 mr-1" />
+            <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </Button>
 
@@ -304,8 +306,8 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
           >
-            <Button variant="ghost" size="sm">
-              <Eye className="h-4 w-4 mr-1" />
+            <Button variant="ghost" size="sm" className="hover:bg-blue-50">
+              <Eye className="h-4 w-4 mr-2" />
               View Original
             </Button>
           </a>
@@ -323,11 +325,11 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
             </DialogHeader>
             <div className="py-4 max-h-[70vh] overflow-y-auto">
               {post.content?.split('\n').map((paragraph, i) => (
-                paragraph ? <p key={i} className="mb-2">{paragraph}</p> : <br key={i} />
+                paragraph ? <p key={i} className="mb-3 text-base leading-relaxed">{paragraph}</p> : <br key={i} />
               ))}
               {post.postImage && (
-                <div className="mt-4">
-                  <img src={post.postImage} alt="Post content" className="max-w-full rounded-lg" />
+                <div className="mt-6">
+                  <img src={post.postImage} alt="Post content" className="w-full rounded-lg shadow-md" />
                 </div>
               )}
             </div>
@@ -340,26 +342,26 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
               <DialogTitle>Edit Categories</DialogTitle>
             </DialogHeader>
             <div className="py-4">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {availableCategories.map((category) => (
-                  <div key={category} className="flex items-center space-x-2">
+                  <div key={category} className="flex items-center space-x-3">
                     <Checkbox
                       checked={selectedCategories.includes(category)}
                       onCheckedChange={() => handleCategoryChange(category)}
                     />
-                    <label>{category}</label>
+                    <label className="text-sm">{category}</label>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-4">
+              <div className="mt-6">
                 <Input
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder="Add new category"
+                  className="mb-2"
                 />
                 <Button
-                  className="mt-2"
                   onClick={() => {
                     if (newCategory) {
                       setNewCategories([...newCategories, newCategory]);
@@ -367,8 +369,9 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                       setNewCategory('');
                     }
                   }}
+                  className="w-full"
                 >
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Add Category
                 </Button>
               </div>
@@ -406,6 +409,6 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </Card>
   );
 }
