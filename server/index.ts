@@ -6,6 +6,15 @@ import { setupAuth, registerAuthRoutes } from "./auth";
 import { runMigrations } from "./migrations";
 import PgSession from "connect-pg-simple";
 
+// Check for required environment variables
+const requiredEnvVars = ['OPENAI_API_KEY', 'ZENROWS_API_KEY'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
+
 // Use memory store fallback if DB is not available
 import connectMemoryStore from "memorystore";
 
