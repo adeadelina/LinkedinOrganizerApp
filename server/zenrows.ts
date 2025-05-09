@@ -1,6 +1,11 @@
 import axios from "axios";
 
+// Initialize API key with a warning if not available
 const API_KEY = process.env.ZENROWS_API_KEY;
+if (!API_KEY) {
+  console.warn('ZENROWS_API_KEY not found in environment variables. Content extraction features will be limited.');
+}
+
 const ZENROWS_URL = "https://api.zenrows.com/v1/";
 
 /**
