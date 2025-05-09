@@ -5,6 +5,10 @@ import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import { runMigrations } from "./migrations";
 import PgSession from "connect-pg-simple";
+import { config } from "dotenv";
+
+// Load environment variables from .env.local
+config({ path: '.env.local' });
 
 // Check for required environment variables and warn if missing
 const requiredEnvVars = ['OPENAI_API_KEY', 'ZENROWS_API_KEY'];
