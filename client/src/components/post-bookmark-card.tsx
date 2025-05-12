@@ -172,16 +172,16 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect }: Post
   
   return (
     <div 
-      className={`bg-white border rounded-md shadow-sm overflow-hidden transition-all hover:shadow-md ${
+      className={`bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-md h-full flex flex-col ${
         isSelected ? 'ring-2 ring-primary' : 'hover:border-gray-300'
-      }`}
+      } ${className}`}
       onClick={() => {
         if (!isProcessing && !isFailed && onSelect) {
           onSelect(post.id);
         }
       }}
     >
-      <div className="p-4">
+      <div className="p-5 flex flex-col flex-grow">
         <div className="flex flex-col">
           {/* Author row */}
           <div className="flex items-center gap-3 mb-3">
