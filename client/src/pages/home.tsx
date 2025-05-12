@@ -322,8 +322,76 @@ export default function Home() {
                 
                 {/* Results Section */}
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between px-6 py-5">
-                    <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
+                  <CardHeader className="px-6 py-5">
+                    <CardTitle className="text-lg font-medium mb-4">Analyzed content</CardTitle>
+                    
+                    {/* Search Section */}
+                    <div className="flex gap-4">
+                      <div className="relative flex-1">
+                        <Input
+                          placeholder="Search posts..."
+                          value={searchTerm}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            if (e.target.value === '') {
+                              // Reset search
+                              handleSearch('', searchBy);
+                            }
+                          }}
+                          className={`pr-16 ${searchTerm ? 'pl-3' : 'pl-9'}`}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSearch(searchTerm, searchBy);
+                            }
+                          }}
+                        />
+                        {!searchTerm && (
+                          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        )}
+                        <div className="absolute right-0 top-0 h-full flex items-center">
+                          {searchTerm && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-full px-2 hover:bg-transparent" 
+                              onClick={() => {
+                                setSearchTerm('');
+                                handleSearch('', searchBy);
+                              }}
+                            >
+                              <X size={14} className="text-gray-400 hover:text-gray-600" />
+                            </Button>
+                          )}
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-full px-2" 
+                            onClick={() => handleSearch(searchTerm, searchBy)}
+                          >
+                            <Search size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <Select 
+                        value={searchBy} 
+                        onValueChange={(value: "keyword" | "author") => {
+                          setSearchBy(value);
+                          if (searchTerm) {
+                            handleSearch(searchTerm, value);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Search by..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="keyword">Search by Content</SelectItem>
+                          <SelectItem value="author">Search by Author</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardHeader>
                     <div className="flex space-x-2">
                       <div className="flex gap-2">
                         <Popover>
