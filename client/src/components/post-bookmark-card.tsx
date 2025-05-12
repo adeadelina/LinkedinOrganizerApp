@@ -1,3 +1,4 @@
+typescript
 import React, { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { 
@@ -306,8 +307,8 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                   </h3>
 
                   <p className="text-sm text-gray-700 line-clamp-3 mb-2">
-                    {truncateText(post.content || "", 180)}
-                  </p>
+                      {truncateText(post.content || "", 180)}
+                    </p>
 
                 {post.postImage && (
                   <div className="mt-2 mb-2">
