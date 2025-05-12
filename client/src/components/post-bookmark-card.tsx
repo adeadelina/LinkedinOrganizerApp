@@ -27,6 +27,7 @@ interface PostBookmarkCardProps {
   onRefetch?: () => void;
   isSelected?: boolean;
   onSelect?: (id: number) => void;
+  className?: string;
 }
 
 export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect }: PostBookmarkCardProps) {
