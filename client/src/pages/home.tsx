@@ -307,40 +307,6 @@ export default function Home() {
                   <CardHeader className="flex flex-row items-center justify-between px-6 py-5">
                     <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
                     <div className="flex space-x-2">
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        {selectedCategories.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 items-center">
-                            <span className="text-sm text-gray-500 mr-1">Filtered by:</span>
-                            {selectedCategories.map(category => (
-                              <CategoryFilter
-                                key={category}
-                                category={category}
-                                isSelected={true}
-                                onClick={() => {
-                                  setSelectedCategories(selectedCategories.filter(cat => cat !== category));
-                                  refetchCategories();
-                                  refetchPosts();
-                                }}
-                              />
-                            ))}
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => {
-                                setSelectedCategories([]);
-                                refetchCategories();
-                                refetchPosts();
-                              }}
-                              className="ml-1 h-6 text-xs"
-                            >
-                              Clear All
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500">All Categories</span>
-                        )}
-                      </div>
-                      
                       <div className="flex gap-2">
                         <Popover>
                           <PopoverTrigger asChild>
@@ -398,11 +364,6 @@ export default function Home() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
-                      <Button variant="outline" size="sm" className="flex items-center">
-                        <Filter className="h-4 w-4 mr-1" />
-                        More Filters
-                      </Button>
                     </div>
                   </CardHeader>
                   
