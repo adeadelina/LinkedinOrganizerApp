@@ -557,8 +557,7 @@ async function processContentPost(postId: number, url: string): Promise<void> {
       // Set the post as completed but leave categories empty for user to choose
       await storage.updatePost(postId, {
         categories: [], // Leave empty for user to choose
-        summary:
-          "Content extracted from LinkedIn post. Please assign categories.",
+        summary: "",
         confidence: "0", // No confidence level since no categories assigned yet
         processingStatus: "completed",
         processError: null,

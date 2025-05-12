@@ -401,10 +401,12 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                 </div>
               )}
             {post.summary && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-md border border-gray-100">
-                <h4 className="font-medium text-sm mb-2">Summary:</h4>
-                <p className="text-sm text-gray-700">{post.summary}</p>
-              </div>
+              {post.summary && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-md border border-gray-100">
+                  <h4 className="font-medium text-sm mb-2">Summary:</h4>
+                  <p className="text-sm text-gray-700">{post.summary}</p>
+                </div>
+              )}
             )}
             <div className="mt-6 flex flex-wrap gap-1">
               {post.categories?.map(category => (
