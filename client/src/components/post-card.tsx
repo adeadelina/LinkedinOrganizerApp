@@ -229,7 +229,7 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric'
-                    }) : getTimeElapsed(post.createdAt)}
+                    }) : (post.createdAt ? `Added ${getTimeElapsed(post.createdAt)}` : 'Date unknown')}
                   </p>
                 </div>
               </div>
