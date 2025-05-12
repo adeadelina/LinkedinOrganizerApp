@@ -280,13 +280,11 @@ export default function Home() {
                 {/* Content Analyzer Header Section */}
                 <Card className="mb-6">
                   <CardHeader className="px-6">
-                    <CardTitle className="text-xl">Content Analyzer</CardTitle>
-                    <CardDescription>Extract, analyze, and categorize LinkedIn posts and Substack newsletters</CardDescription>
+                    <CardDescription>Extract, analyze, and categorize LinkedIn posts</CardDescription>
                   </CardHeader>
                   
-                  {/* Analyze Content Section */}
+                  {/* Input Section */}
                   <CardContent className="border-t border-gray-200 px-6 py-5">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Analyze Content</h2>
                     <Form {...form}>
                       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
@@ -294,11 +292,10 @@ export default function Home() {
                           name="url"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Content URL</FormLabel>
                               <div className="flex items-start gap-3">
                                 <FormControl>
                                   <Input 
-                                    placeholder="https://www.linkedin.com/posts/... or https://newsletter.example.com/p/..." 
+                                    placeholder="Add your Linkedin post link" 
                                     {...field} 
                                     className="flex-1"
                                   />
@@ -308,7 +305,7 @@ export default function Home() {
                                   disabled={isAnalyzing}
                                   className="bg-[#0A66C2] hover:bg-blue-700"
                                 >
-                                  {isAnalyzing ? "Processing..." : "Extract & Categorize"}
+                                  {isAnalyzing ? "Processing..." : "Import content"}
                                 </Button>
                               </div>
                               <FormMessage />
