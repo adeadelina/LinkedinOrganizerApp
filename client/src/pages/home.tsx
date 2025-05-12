@@ -343,9 +343,35 @@ export default function Home() {
 
                 {/* Results Section */}
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between px-6 py-5">
-                    <CardTitle className="text-lg font-medium">Analyzed content</CardTitle>
-                    <div className="flex space-x-2">
+                  <CardHeader className="px-6 py-5">
+                    <CardTitle className="text-lg font-medium mb-4">Analyzed content</CardTitle>
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Search..."
+                          value={searchTerm}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            if (e.target.value === '') {
+                              onSearch?.('', searchBy);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              onSearch?.(searchTerm, searchBy);
+                            }
+                          }}
+                        />
+                        <Select value={searchBy} onValueChange={(value: "keyword" | "author") => setSearchBy(value)}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Search by..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="keyword">By keyword</SelectItem>
+                            <SelectItem value="author">By author</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="flex gap-2">
                         <Popover>
                           <PopoverTrigger asChild>
