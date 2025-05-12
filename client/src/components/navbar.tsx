@@ -37,12 +37,12 @@ export function Navbar() {
   // Get user initials for avatar fallback
   const getUserInitials = () => {
     if (!user?.name) return user?.username.substring(0, 2).toUpperCase() || "U";
-    
+
     const nameParts = user.name.split(" ");
     if (nameParts.length === 1) {
       return nameParts[0].substring(0, 2).toUpperCase();
     }
-    
+
     return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
   };
 
@@ -51,7 +51,12 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <Link href="/">
-            <span className="text-xl font-bold cursor-pointer">LinkedIn Analyzer</span>
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold">
+                <span className="text-primary">LinkedIn</span>
+                <span className="text-gray-700">Analyzer</span>
+              </h1>
+            </div>
           </Link>
         </div>
 
