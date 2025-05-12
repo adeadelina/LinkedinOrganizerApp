@@ -164,9 +164,15 @@ export default function Home() {
       const contentLower = (post.content || "").toLowerCase();
       const authorLower = (post.authorName || "").toLowerCase();
       
-      // Check both content and author name
-      if (!contentLower.includes(searchTermLower) && !authorLower.includes(searchTermLower)) {
-        return false;
+      if (searchBy === "keyword") {
+        if (!contentLower.includes(searchTermLower)) return false;
+      } else if (searchBy === "author") {
+        if (!authorLower.includes(searchTermLower)) return false;
+      } else {
+        // Search in both content and author name
+        if (!contentLower.includes(searchTermLower) && !authorLower.includes(searchTermLower)) {
+          return false;
+        }
       }
     }
 

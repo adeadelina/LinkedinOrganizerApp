@@ -49,7 +49,7 @@ const SidebarItem = ({ href, icon, label, count, active }: SidebarItemProps) => 
 export function Sidebar({ categories = [], selectedCategories = [], onCategoryChange, onSearch }: SidebarProps) {
   const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchBy, setSearchBy] = useState<"keyword" | "author">("keyword");
+  const [searchMode, setSearchMode] = useState<"all" | "keyword" | "author">("all");
   const [showFilters, setShowFilters] = useState(true);
   const [showCategories, setShowCategories] = useState(true);
   
@@ -113,7 +113,22 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
             </Button>
           </div>
         </div>
-        
+        <div className="mt-2">
+          <select
+            className="w-full px-2 py-1 text-sm border rounded-md bg-white"
+            value={searchMode}
+            onChange={(e) => {
+              setSearchMode(e.target.value as "all" | "keyword" | "author");
+              if (searchTerm) {
+                onSearch?.(searchTerm, e.target.value as "keyword" | "author");
+              }
+            }}
+          >
+            <option value="all">Search All</option>
+            <option value="keyword">Search by Content</option>
+            <option value="author">Search by Author</option>
+          </select>
+        </div>
       </div>
       
       <div className="mb-4">
