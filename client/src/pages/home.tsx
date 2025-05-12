@@ -399,16 +399,6 @@ export default function Home() {
 
                   {/* List of analyzed content with grid layout */}
                   <CardContent className="px-6">
-                    <div className="flex items-center mb-4">
-                      <div className="font-medium text-lg flex items-center gap-2">
-                        <BookmarkPlus className="h-5 w-5 text-primary" />
-                        <span>All bookmarks</span>
-                        <span className="text-sm font-normal text-gray-500">
-                          ({isLoadingPosts ? '...' : posts.filter(p => p.processingStatus === "completed").length})
-                        </span>
-                      </div>
-                    </div>
-
                     {isLoadingPosts ? (
                       <div className="p-6 text-center">Loading content...</div>
                     ) : sortedPosts.length === 0 ? (
