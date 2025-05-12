@@ -99,7 +99,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
               label="Archive" 
             />
             <SidebarItem 
-              href="/unstarred" 
+              href="/unread" 
               icon={<Eye size={16} />} 
               label="Unread" 
             />
