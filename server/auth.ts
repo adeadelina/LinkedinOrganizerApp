@@ -33,7 +33,7 @@ export function setupAuth(app: Express): void {
       if (!user) {
         return done(null, false);
       }
-      
+
       return done(null, {
         id: user.id,
         username: user.username,
@@ -60,23 +60,23 @@ export function setupAuth(app: Express): void {
           if (!user && username.includes('@')) {
             user = await storage.getUserByEmail(username);
           }
-          
+
           // User not found
           if (!user) {
             return done(null, false, { message: "Invalid credentials" });
           }
-          
+
           // Password validation (only for local accounts)
           if (!user.password) {
             return done(null, false, { message: "This account requires OAuth login" });
           }
-          
+
           // Verify password
           const isValid = await compare(password, user.password);
           if (!isValid) {
             return done(null, false, { message: "Incorrect password" });
           }
-          
+
           return done(null, {
             id: user.id,
             username: user.username,
@@ -99,9 +99,9 @@ export function setupAuth(app: Express): void {
                  `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 
                  "localhost:5000";
     const callbackURL = `${protocol}://${host}/api/auth/google/callback`;
-    
+
     console.log(`Configuring Google OAuth with callback URL: ${callbackURL}`);
-    
+
     passport.use(
       new GoogleStrategy(
         {
@@ -114,24 +114,24 @@ export function setupAuth(app: Express): void {
           try {
             // Try to find the user by Google ID
             let user = await storage.getUserByGoogleId(profile.id);
-            
+
             // If user doesn't exist, create a new user
             if (!user) {
               // Create a username from email or profile ID
               const email = profile.emails?.[0]?.value;
               const baseUsername = email ? email.split('@')[0] : `user_${profile.id.substring(0, 10)}`;
-              
+
               // Make sure username is unique by appending a number if needed
               let username = baseUsername;
               let counter = 1;
               let existingUser = await storage.getUserByUsername(username);
-              
+
               while (existingUser) {
                 username = `${baseUsername}_${counter}`;
                 counter++;
                 existingUser = await storage.getUserByUsername(username);
               }
-              
+
               // Create the new user
               user = await storage.createUser({
                 username,
@@ -147,11 +147,11 @@ export function setupAuth(app: Express): void {
                 email: profile.emails?.[0]?.value,
                 picture: profile.photos?.[0]?.value,
               });
-              
+
               // Get the updated user
               user = await storage.getUser(user.id) as User;
             }
-            
+
             return done(null, {
               id: user.id,
               username: user.username,
@@ -188,7 +188,7 @@ export function registerAuthRoutes(app: Express): void {
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       const { username, password, name, email } = req.body;
-      
+
       if (!username || !password) {
         return res.status(400).json({ error: "Username and password are required" });
       }
@@ -200,13 +200,13 @@ export function registerAuthRoutes(app: Express): void {
       if (password.length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters" });
       }
-      
+
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ error: "Username already taken" });
       }
-      
+
       // Check if email already exists (if provided)
       if (email) {
         const existingEmail = await storage.getUserByEmail(email);
@@ -214,11 +214,11 @@ export function registerAuthRoutes(app: Express): void {
           return res.status(400).json({ error: "Email already in use" });
         }
       }
-      
+
       try {
         // Hash the password
         const hashedPassword = await hash(password, 10);
-        
+
         // Create the user
         const user = await storage.createUser({
           username,
@@ -227,32 +227,36 @@ export function registerAuthRoutes(app: Express): void {
           email,
         });
 
-      if (!user || !user.id) {
-        throw new Error("Failed to create user account");
-      }
-      
-      // Log the user in
-      req.login(
-        {
-          id: user.id,
-          username: user.username,
-          name: user.name || undefined,
-          email: user.email || undefined,
-          picture: user.picture || undefined
-        }, 
-        (err) => {
-          if (err) {
-            return res.status(500).json({ error: "Failed to log in after registration" });
-          }
-          return res.status(201).json({
+        if (!user || !user.id) {
+          throw new Error("Failed to create user account");
+        }
+
+        // Log the user in
+        req.login(
+          {
             id: user.id,
             username: user.username,
-            name: user.name,
-            email: user.email,
-            picture: user.picture
-          });
-        }
-      );
+            name: user.name || undefined,
+            email: user.email || undefined,
+            picture: user.picture || undefined
+          },
+          (err) => {
+            if (err) {
+              return res.status(500).json({ error: "Failed to log in after registration" });
+            }
+            return res.status(201).json({
+              id: user.id,
+              username: user.username,
+              name: user.name,
+              email: user.email,
+              picture: user.picture
+            });
+          }
+        );
+      } catch (error) {
+        console.error("Registration error:", error);
+        res.status(500).json({ error: "Failed to register user" });
+      }
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ error: "Failed to register user" });
@@ -280,7 +284,7 @@ export function registerAuthRoutes(app: Express): void {
   // Google authentication routes - only register if Google OAuth is configured
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     app.get("/api/auth/google", passport.authenticate("google"));
-    
+
     app.get(
       "/api/auth/google/callback",
       passport.authenticate("google", {
