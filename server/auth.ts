@@ -94,11 +94,8 @@ export function setupAuth(app: Express): void {
   // Google OAuth2 strategy
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     // For Replit, we need to detect the current URL to support both development and production
-    const protocol = process.env.REPL_SLUG ? "https" : "http";
-    const host = process.env.REPL_SLUG ? 
-                 `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 
-                 "0.0.0.0:5000";
-    const callbackURL = `${protocol}://${host}/api/auth/google/callback`;
+    // Always use HTTPS for Google OAuth in Replit
+    const callbackURL = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/auth/google/callback`;
 
     console.log(`Configuring Google OAuth with callback URL: ${callbackURL}`);
 
