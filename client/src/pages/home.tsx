@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Filter, Edit2, Grid, List, Columns, Rows, BookmarkPlus, Tag, ChevronDown } from "lucide-react";
+import { Filter, Edit2, Grid, List, Columns, Rows, BookmarkPlus, Tag, ChevronDown, User, Search } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -345,7 +345,8 @@ export default function Home() {
                             }}
                           />
                         </div>
-                        <Select value={searchBy} onValueChange={(value: "keyword" | "author") => setSearchBy(value)}>
+                        <Select value={searchBy} onValueChange={(value:```typescript
+ "keyword" | "author") => setSearchBy(value)}>
                           <SelectTrigger className="w-full sm:w-[140px]">
                             <SelectValue placeholder="Search by..." />
                           </SelectTrigger>
