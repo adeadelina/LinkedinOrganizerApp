@@ -252,7 +252,8 @@ export default function Home() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <Sidebar 
-          categories={categories} 
+          categories={categories}
+          posts={posts}
           onCategoryChange={(category) => {
             // Toggle category selection - if it's already selected, remove it
             if (selectedCategories.includes(category)) {

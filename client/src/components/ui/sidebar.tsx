@@ -23,6 +23,7 @@ interface SidebarProps {
   selectedCategories?: string[];
   onCategoryChange?: (category: string) => void;
   onSearch?: (term: string, searchBy: "keyword" | "author") => void;
+  posts?: Array<{ processingStatus: string }>;
 }
 
 const SidebarItem = ({ href, icon, label, count, active }: SidebarItemProps) => {
@@ -91,7 +92,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
               icon={<Bookmark size={16} />} 
               label="All Posts" 
               active={location === "/"} 
-              count={100}
+              count={posts.filter(post => post.processingStatus === "completed").length}
             />
             <SidebarItem 
               href="/unread" 
