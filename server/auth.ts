@@ -192,6 +192,14 @@ export function registerAuthRoutes(app: Express): void {
       if (!username || !password) {
         return res.status(400).json({ error: "Username and password are required" });
       }
+
+      if (username.length < 3) {
+        return res.status(400).json({ error: "Username must be at least 3 characters" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
       
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
@@ -207,16 +215,21 @@ export function registerAuthRoutes(app: Express): void {
         }
       }
       
-      // Hash the password
-      const hashedPassword = await hash(password, 10);
-      
-      // Create the user
-      const user = await storage.createUser({
-        username,
-        password: hashedPassword,
-        name,
-        email,
-      });
+      try {
+        // Hash the password
+        const hashedPassword = await hash(password, 10);
+        
+        // Create the user
+        const user = await storage.createUser({
+          username,
+          password: hashedPassword,
+          name,
+          email,
+        });
+
+      if (!user || !user.id) {
+        throw new Error("Failed to create user account");
+      }
       
       // Log the user in
       req.login(
