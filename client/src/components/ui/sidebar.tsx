@@ -75,10 +75,9 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
           onClick={() => setShowFilters(!showFilters)}
           className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50"
         >
-          <span className="text-sm font-medium flex items-center">
-            <Bookmark size={16} className="mr-2 text-primary" />
-            All Bookmarks
-          </span>
+          <span className="text-sm font-medium">
+              All Bookmarks
+            </span>
           <ChevronDown 
             size={16} 
             className={`text-gray-500 transition-transform ${showFilters ? 'rotate-180' : ''}`} 
