@@ -266,27 +266,28 @@ export default function Home() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Hidden on mobile */}
-        <div className="hidden md:block">
-          <Sidebar 
-            categories={categories}
-            posts={posts}
-            onCategoryChange={(category) => {
-              if (selectedCategories.includes(category)) {
-                setSelectedCategories(selectedCategories.filter(cat => cat !== category));
-              } else {
-                setSelectedCategories([...selectedCategories, category]);
-              }
-              refetchCategories();
-              refetchPosts();
-            }}
-            onSearch={(term, searchByType) => {
-              setSearchTerm(term);
-              setSearchBy(searchByType);
-            }}
-            selectedCategories={selectedCategories}
-          />
-        </div>
+        {/* Sidebar */}
+        <Sidebar 
+          categories={categories}
+          posts={posts}
+          onCategoryChange={(category) => {
+            // Toggle category selection - if it's already selected, remove it
+            if (selectedCategories.includes(category)) {
+              setSelectedCategories(selectedCategories.filter(cat => cat !== category));
+            } else {
+              // Otherwise add it to the selection
+              setSelectedCategories([...selectedCategories, category]);
+            }
+            // Force refetch data to ensure sidebar is consistent
+            refetchCategories();
+            refetchPosts();
+          }}
+          onSearch={(term, searchByType) => {
+            setSearchTerm(term);
+            setSearchBy(searchByType);
+          }}
+          selectedCategories={selectedCategories}
+        />
 
         {/* Main Content */}
         <div className="flex flex-col flex-1 overflow-hidden">
@@ -502,33 +503,6 @@ export default function Home() {
               </div>
             </div>
           </main>
-        </div>
-      </div>
-
-      {/* Bottom Navigation Bar - Visible only on mobile */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4">
-        <div className="flex justify-around items-center">
-          <button 
-            onClick={() => setSearchTerm("")} 
-            className={`flex flex-col items-center ${!searchTerm ? 'text-primary' : 'text-gray-500'}`}
-          >
-            <Search className="h-5 w-5" />
-            <span className="text-xs mt-1">Search</span>
-          </button>
-          <button 
-            onClick={() => setSelectedCategories([])} 
-            className={`flex flex-col items-center ${selectedCategories.length === 0 ? 'text-primary' : 'text-gray-500'}`}
-          >
-            <Tag className="h-5 w-5" />
-            <span className="text-xs mt-1">Categories</span>
-          </button>
-          <button 
-            onClick={() => setSelectedAuthors([])} 
-            className={`flex flex-col items-center ${selectedAuthors.length === 0 ? 'text-primary' : 'text-gray-500'}`}
-          >
-            <User className="h-5 w-5" />
-            <span className="text-xs mt-1">Authors</span>
-          </button>
         </div>
       </div>
     </div>
