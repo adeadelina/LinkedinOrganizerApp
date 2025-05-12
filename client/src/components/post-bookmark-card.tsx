@@ -294,13 +294,20 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
               </div>
             ) : (
               <>
-                <h3 className="font-medium text-sm mb-2 line-clamp-1">
-                  {getHeadline(post.content)}
-                </h3>
+                <div 
+                  className="cursor-pointer" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFullPostDialogOpen(true);
+                  }}
+                >
+                  <h3 className="font-medium text-sm mb-2 line-clamp-1">
+                    {getHeadline(post.content)}
+                  </h3>
 
-                <p className="text-sm text-gray-700 line-clamp-3 mb-2">
-                  {truncateText(post.content || "", 180)}
-                </p>
+                  <p className="text-sm text-gray-700 line-clamp-3 mb-2">
+                    {truncateText(post.content || "", 180)}
+                  </p>
 
                 {post.postImage && (
                   <div className="mt-2 mb-2">
@@ -318,6 +325,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                     <p className="text-xs line-clamp-2">{post.summary}</p>
                   </div>
                 )}
+                </div>
 
                 {/* Categories */}
                 <div className="mt-2">
