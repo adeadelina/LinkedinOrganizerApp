@@ -9,7 +9,20 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Filter, Edit2, Grid, List, Columns, Rows, BookmarkPlus, Tag } from "lucide-react";
+import { Filter, Edit2, Grid, List, Columns, Rows, BookmarkPlus, Tag, ChevronDown } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { PostCard } from "@/components/post-card";
 import { PostBookmarkCard } from "@/components/post-bookmark-card";
 import { CategoryFilter } from "@/components/category-filter";
@@ -327,18 +340,63 @@ export default function Home() {
                         )}
                       </div>
                       
-                      <Select 
-                        value={sortOrder} 
-                        onValueChange={setSortOrder}
-                      >
-                        <SelectTrigger className="w-[150px]">
-                          <SelectValue placeholder="Most Recent" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Most Recent">Most Recent</SelectItem>
-                          <SelectItem value="Oldest First">Oldest First</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-[180px] justify-between">
+                              {selectedCategories.length === 0 ? (
+                                "All Categories"
+                              ) : (
+                                `${selectedCategories.length} selected`
+                              )}
+                              <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[200px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search categories..." />
+                              <CommandList>
+                                <CommandEmpty>No categories found.</CommandEmpty>
+                                <CommandGroup className="max-h-[200px] overflow-auto">
+                                  {categories.map((category) => (
+                                    <CommandItem
+                                      key={category}
+                                      onSelect={() => {
+                                        setSelectedCategories((prev) =>
+                                          prev.includes(category)
+                                            ? prev.filter((c) => c !== category)
+                                            : [...prev, category]
+                                        );
+                                        refetchCategories();
+                                        refetchPosts();
+                                      }}
+                                    >
+                                      <Checkbox
+                                        checked={selectedCategories.includes(category)}
+                                        className="mr-2"
+                                      />
+                                      {category}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+
+                        <Select 
+                          value={sortOrder} 
+                          onValueChange={setSortOrder}
+                        >
+                          <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="Most Recent" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Most Recent">Most Recent</SelectItem>
+                            <SelectItem value="Oldest First">Oldest First</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       
                       <Button variant="outline" size="sm" className="flex items-center">
                         <Filter className="h-4 w-4 mr-1" />
