@@ -139,46 +139,8 @@ export default function Home() {
     analyzePost(data.url);
   };
 
-  // Get the most recent post for the "Analyzed content" section
-  const getMostRecentPost = () => {
-    if (posts.length === 0) return [];
-    
-    // Filter posts by the selected categories if needed
-    const eligiblePosts = posts.filter(post => {
-      // Skip failed or processing posts
-      if (post.processingStatus !== "completed") return false;
-      
-      // Apply category filter
-      if (selectedCategories.length === 0) return true;
-      
-      // Check if the post has at least one of the selected categories
-      return post.categories && 
-             Array.isArray(post.categories) && 
-             // Make sure we're only checking against valid categories
-             selectedCategories
-               .filter(cat => categories.includes(cat))
-               .some(category => post.categories?.includes(category) ?? false);
-    });
-    
-    if (eligiblePosts.length === 0) return [];
-    
-    // Sort filtered posts by createdAt date
-    const sortedPosts = [...eligiblePosts].sort((a, b) => {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    });
-    
-    // Return only the most recent post
-    return [sortedPosts[0]];
-  };
-  
-  // Get the most recent post that respects category filter
-  const mostRecentPost = getMostRecentPost();
-  
-  // Filter posts by category only - exclude the most recent post from this list
+  // Filter and sort all posts
   const filteredPosts = posts.filter((post) => {
-    // Skip the most recent post since it's displayed separately
-    if (mostRecentPost.length > 0 && post.id === mostRecentPost[0].id) return false;
-    
     // Skip posts that are still processing or failed
     if (post.processingStatus !== "completed") return false;
     
@@ -194,7 +156,7 @@ export default function Home() {
              .some(category => post.categories?.includes(category) ?? false);
   });
 
-  // Sort filtered posts (excludes the most recent one)
+  // Sort filtered posts
   const sortedPosts = [...filteredPosts].sort((a, b) => {
     if (sortOrder === "Most Recent") {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
@@ -417,14 +379,34 @@ export default function Home() {
                     
                     {isLoadingPosts ? (
                       <div className="p-6 text-center">Loading content...</div>
-                    ) : posts.filter(p => p.processingStatus === "completed").length === 0 ? (
+                    ) : sortedPosts.length === 0 ? (
                       <div className="p-6 text-center text-gray-500">
-                        No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started.
+                        {selectedCategories.length > 0 ? (
+                          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                            <h3 className="text-md font-medium text-amber-800 mb-2">No posts match these categories</h3>
+                            <p className="text-sm text-amber-700">
+                              There are no posts matching the selected {selectedCategories.length === 1 ? 'category' : 'categories'}.
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-3"
+                              onClick={() => {
+                                setSelectedCategories([]);
+                                refetchCategories();
+                                refetchPosts();
+                              }}
+                            >
+                              Clear Filter
+                            </Button>
+                          </div>
+                        ) : (
+                          "No content has been analyzed yet. Enter a LinkedIn or Substack URL above to get started."
+                        )}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                        {/* Display most recent post first */}
-                        {mostRecentPost.map((post) => (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {sortedPosts.map((post) => (
                           <PostBookmarkCard 
                             key={post.id} 
                             post={post} 
@@ -434,35 +416,9 @@ export default function Home() {
                       </div>
                     )}
                   </CardContent>
-                  
-                  {/* Message when filter is active but no categories match */}
-                  {selectedCategories.length > 0 && 
-                   mostRecentPost.length === 0 && 
-                   Object.keys(postsByCategory).length === 0 && (
-                    <CardContent className="border-t border-gray-200 px-6 py-5">
-                      <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-center">
-                        <h3 className="text-md font-medium text-amber-800 mb-2">No posts match these categories</h3>
-                        <p className="text-sm text-amber-700">
-                          There are no posts matching the selected {selectedCategories.length === 1 ? 'category' : 'categories'}.
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-3"
-                          onClick={() => {
-                            setSelectedCategories([]);
-                            refetchCategories();
-                            refetchPosts();
-                          }}
-                        >
-                          Clear Filter
-                        </Button>
-                      </div>
-                    </CardContent>
-                  )}
 
                   {/* Categories Section */}
-                  {Object.keys(postsByCategory).length > 0 && (
+                  {sortedPosts.length > 0 && (
                     <CardContent className="border-t border-gray-200 px-6 py-5">
                       <div className="flex justify-between items-center mb-4">
                         <div className="font-medium text-lg flex items-center gap-2">
