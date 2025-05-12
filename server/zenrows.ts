@@ -145,7 +145,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
         // Find author from potential schema locations
         if (schemaData.author && schemaData.author["@type"] === "Person") {
           authorName = schemaData.author.name || authorName;
-          authorImage = schemaData.author.image["url"] || authorImage;
+          authorImage = schemaData.author.image?.url || authorImage;
         }
         // For posts type articles where there is no "author" but there's a creator
         else if (
@@ -153,7 +153,7 @@ export async function scrapeLinkedInPost(url: string): Promise<{
           schemaData.creator["@type"] === "Person"
         ) {
           authorName = schemaData.creator.name || authorName;
-          authorImage = schemaData.creator.image["url"] || authorImage;
+          authorImage = schemaData.creator.image?.url || authorImage;
         }
 
         // Find content from schema - check multiple potential fields
