@@ -97,7 +97,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
               href="/unread" 
               icon={<Eye size={16} />} 
               label="Uncategorized" 
-              count={posts.filter(post => !post.categories || post.categories.length === 0).length}
+              count={posts.filter(post => (!post.categories || post.categories.length === 0) && post.processingStatus === "completed").length}
             />
           </div>
         )}
