@@ -288,14 +288,6 @@ export default function Home() {
                           value={searchTerm}
                           onChange={(e) => {
                             setSearchTerm(e.target.value);
-                            if (e.target.value === '') {
-                              onSearch?.('', searchBy);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              onSearch?.(searchTerm, searchBy);
-                            }
                           }}
                         />
                         <Select value={searchBy} onValueChange={(value: "keyword" | "author") => setSearchBy(value)}>
@@ -352,14 +344,6 @@ export default function Home() {
                           value={searchTerm}
                           onChange={(e) => {
                             setSearchTerm(e.target.value);
-                            if (e.target.value === '') {
-                              onSearch?.('', searchBy);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              onSearch?.(searchTerm, searchBy);
-                            }
                           }}
                         />
                         <Select value={searchBy} onValueChange={(value: "keyword" | "author") => setSearchBy(value)}>
@@ -796,6 +780,7 @@ export default function Home() {
                                       rel="noopener noreferrer"
                                       onClick={(e) => e && e.stopPropagation()} // Prevent card click
                                     >
+```text
                                       <Button variant="ghost" size="sm" className="text-xs text-[#0A66C2] bg-[#EEF3F8] hover:bg-blue-50">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -807,9 +792,7 @@ export default function Home() {
                                   </div>
 
                                   {/* Hidden PostCard to handle category editing dialog */}
-                                  <div className="hiddenCode analysis: The code removes the Grid and List toggle buttons from the CardContent section.
-```
-">
+                                  <div className="hidden">
                                     <div id={`post-card-ref-${post.id}`}>
                                       <PostCard post={post} onRefetch={refetchPosts} />
                                     </div>
