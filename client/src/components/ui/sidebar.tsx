@@ -62,11 +62,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
 
   return (
     <div className="bg-white w-60 min-h-screen border-r border-gray-100 py-4 flex flex-col">
-      <div className="px-4 mb-6">
-        <h1 className="text-xl font-semibold text-gray-800">
-          <span className="text-primary">content</span> analyzer
-        </h1>
-      </div>
+      
 
 
 
