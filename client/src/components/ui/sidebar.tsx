@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { 
   Archive, Bookmark, Tags, Folder, Eye, Image, Link2, 
   Search, ChevronDown, Filter, CheckSquare, User, Hash,
-  Database, ExternalLink, X
+  Database, ExternalLink, X, Tag
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CategoryFilter } from "@/components/category-filter";
@@ -67,7 +67,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
         </h1>
       </div>
 
-      
+
 
       <div className="mb-4">
         <button 

@@ -5,6 +5,7 @@ import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import NotFound from "@/pages/not-found";
+import Unread from "./pages/unread";
 
 function Router() {
   return (
@@ -12,6 +13,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/unread" component={Unread} />
       <Route component={NotFound} />
     </Switch>
   );
