@@ -438,6 +438,19 @@ export default function Home() {
                             </Command>
                           </PopoverContent>
                         </Popover>
+
+                        <Select 
+                          value={sortOrder} 
+                          onValueChange={setSortOrder}
+                        >
+                          <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="Most Recent" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Most Recent">Most Recent</SelectItem>
+                            <SelectItem value="Oldest First">Oldest First</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </CardHeader>
