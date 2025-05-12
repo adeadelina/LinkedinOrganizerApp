@@ -281,6 +281,34 @@ export default function Home() {
                 <Card className="mb-6">
                   <CardContent className="px-6 py-5">
                     <h1 className="text-2xl font-semibold text-gray-900 mb-4">Extract, analyze, and categorize LinkedIn posts</h1>
+                    <div className="mb-4">
+                      <div className="flex gap-2 mb-4">
+                        <Input
+                          placeholder="Search..."
+                          value={searchTerm}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            if (e.target.value === '') {
+                              onSearch?.('', searchBy);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              onSearch?.(searchTerm, searchBy);
+                            }
+                          }}
+                        />
+                        <Select value={searchBy} onValueChange={(value: "keyword" | "author") => setSearchBy(value)}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Search by..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="keyword">By keyword</SelectItem>
+                            <SelectItem value="author">By author</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <Form {...form}>
                       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField

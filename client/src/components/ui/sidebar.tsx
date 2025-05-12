@@ -52,13 +52,13 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
   const [searchMode, setSearchMode] = useState<"all" | "keyword" | "author">("all");
   const [showFilters, setShowFilters] = useState(true);
   const [showCategories, setShowCategories] = useState(true);
-  
+
   const handleSearch = () => {
     if (onSearch) {
       onSearch(searchTerm, searchBy);
     }
   };
-  
+
   return (
     <div className="bg-white w-60 min-h-screen border-r border-gray-100 py-4 flex flex-col">
       <div className="px-4 mb-6">
@@ -66,71 +66,9 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
           <span className="text-primary">content</span> analyzer
         </h1>
       </div>
+
       
-      {/* Search bar */}
-      <div className="px-4 mb-4">
-        <div className="relative">
-          <Input
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              if (e.target.value === '') {
-                onSearch?.('', searchBy);
-              }
-            }}
-            className={`pr-16 ${searchTerm ? 'pl-3' : 'pl-9'}`}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSearch();
-              }
-            }}
-          />
-          {!searchTerm && (
-            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          )}
-          <div className="absolute right-0 top-0 h-full flex items-center">
-            {searchTerm && (
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="h-full px-2 hover:bg-transparent" 
-                onClick={() => {
-                  setSearchTerm('');
-                  onSearch?.('', searchBy);
-                }}
-              >
-                <X size={14} className="text-gray-400 hover:text-gray-600" />
-              </Button>
-            )}
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-full px-2" 
-              onClick={handleSearch}
-            >
-              <Search size={16} />
-            </Button>
-          </div>
-        </div>
-        <div className="mt-2">
-          <select
-            className="w-full px-2 py-1 text-sm border rounded-md bg-white"
-            value={searchMode}
-            onChange={(e) => {
-              setSearchMode(e.target.value as "all" | "keyword" | "author");
-              if (searchTerm) {
-                onSearch?.(searchTerm, e.target.value as "keyword" | "author");
-              }
-            }}
-          >
-            <option value="all">Search All</option>
-            <option value="keyword">Search by Content</option>
-            <option value="author">Search by Author</option>
-          </select>
-        </div>
-      </div>
-      
+
       <div className="mb-4">
         <button 
           onClick={() => setShowFilters(!showFilters)}
@@ -145,7 +83,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
             className={`text-gray-500 transition-transform ${showFilters ? 'rotate-180' : ''}`} 
           />
         </button>
-        
+
         {showFilters && (
           <div className="mt-1">
             <SidebarItem 
@@ -168,7 +106,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
           </div>
         )}
       </div>
-      
+
       {/* Categories section with collapsible header */}
       <div className="mb-4">
         <button 
@@ -184,7 +122,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
             className={`text-gray-500 transition-transform ${showCategories ? 'rotate-180' : ''}`} 
           />
         </button>
-        
+
         {showCategories && categories.length > 0 && (
           <div className="px-4 py-2 space-y-2 max-h-64 overflow-y-auto">
             {categories.map(category => (
@@ -209,7 +147,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
           </div>
         )}
       </div>
-      
+
       {/* Sources section */}
       <div className="mb-4">
         <button className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50">
@@ -220,7 +158,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
           <ChevronDown size={16} className="text-gray-500" />
         </button>
       </div>
-      
+
       <div className="mt-auto px-4 py-2 text-xs text-gray-500 border-t border-gray-100">
         © {new Date().getFullYear()} Content Analyzer
       </div>
