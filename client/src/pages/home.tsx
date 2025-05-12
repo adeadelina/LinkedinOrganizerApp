@@ -160,14 +160,13 @@ export default function Home() {
     
     // Apply search filter if there's a search term
     if (searchTerm) {
-      if (searchBy === "keyword") {
-        const contentLower = (post.content || "").toLowerCase();
-        const searchTermLower = searchTerm.toLowerCase();
-        if (!contentLower.includes(searchTermLower)) return false;
-      } else if (searchBy === "author") {
-        const authorLower = (post.authorName || "").toLowerCase();
-        const searchTermLower = searchTerm.toLowerCase();
-        if (!authorLower.includes(searchTermLower)) return false;
+      const searchTermLower = searchTerm.toLowerCase();
+      const contentLower = (post.content || "").toLowerCase();
+      const authorLower = (post.authorName || "").toLowerCase();
+      
+      // Check both content and author name
+      if (!contentLower.includes(searchTermLower) && !authorLower.includes(searchTermLower)) {
+        return false;
       }
     }
 

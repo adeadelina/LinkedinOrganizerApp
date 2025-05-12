@@ -113,32 +113,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
             </Button>
           </div>
         </div>
-        <div className="mt-2 flex gap-2">
-          <Button
-            size="sm"
-            variant={searchBy === "keyword" ? "default" : "outline"}
-            className="text-xs h-7 px-2"
-            onClick={() => {
-              setSearchBy("keyword");
-              if (searchTerm) handleSearch();
-            }}
-          >
-            <Hash size={14} className="mr-1" />
-            Content
-          </Button>
-          <Button
-            size="sm"
-            variant={searchBy === "author" ? "default" : "outline"}
-            className="text-xs h-7 px-2"
-            onClick={() => {
-              setSearchBy("author");
-              if (searchTerm) handleSearch();
-            }}
-          >
-            <User size={14} className="mr-1" />
-            Author
-          </Button>
-        </div>
+        
       </div>
       
       <div className="mb-4">
