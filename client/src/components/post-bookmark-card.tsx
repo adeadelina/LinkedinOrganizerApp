@@ -38,14 +38,14 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
   const [newCategory, setNewCategory] = useState("");
   const [newCategories, setNewCategories] = useState<string[]>([]);
-  
+
   // Fetch all categories
   const { data: availableCategories = [] } = useQuery<string[]>({
     queryKey: ['/api/categories'],
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
-  
+
   const deletePostMutation = useMutation({
     mutationFn: async () => {
       return apiRequest(
@@ -62,12 +62,12 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
         description: "The post has been successfully deleted.",
       });
       setIsDeleteDialogOpen(false);
-      
+
       queryClient.invalidateQueries({ 
         queryKey: ['/api/posts'],
         refetchType: 'active',
       });
-      
+
       if (onRefetch) onRefetch();
     },
     onError: (error) => {
@@ -79,7 +79,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
       setIsDeleteDialogOpen(false);
     }
   });
-  
+
   const updateCategoriesMutation = useMutation({
     mutationFn: async () => {
       // Create unique arrays without using Sets to avoid TypeScript issues
@@ -160,17 +160,17 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
     }
     updateCategoriesMutation.mutate();
   };
-  
+
   const isProcessing = post.processingStatus === "processing";
   const isFailed = post.processingStatus === "failed";
-  
+
   // Get the first sentence of content for headline
   const getHeadline = (content: string | null) => {
     if (!content) return "";
     const firstSentence = content.split(/(?<=[.!?])\s+/)[0];
     return truncateText(firstSentence, 80);
   };
-  
+
   return (
     <div 
       className={`bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-md h-full flex flex-col ${
@@ -194,7 +194,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                 onClick={(e) => e.stopPropagation()}
               />
             )}
-            
+
             {post.authorImage ? (
               <img 
                 src={post.authorImage} 
@@ -208,13 +208,39 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                 </span>
               </div>
             )}
-            
+
             <div className="flex-1">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-medium text-sm truncate">
                   {post.authorName || 'Unknown Author'}
                 </h3>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCategoryDialogOpen(true);
+                    }}
+                  >
+                    <Tag className="h-4 w-4" />
+                  </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-[#0A66C2]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(post.url, "_blank");
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                      <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"></path>
+                    </svg>
+                  </Button>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -228,21 +254,6 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                       }}>
                         <ClipboardCheck className="h-4 w-4 mr-2" />
                         View Full Post
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(post.url, "_blank");
-                      }}>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View Original
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        setIsCategoryDialogOpen(true);
-                      }}>
-                        <Tag className="h-4 w-4 mr-2" />
-                        Edit Categories
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={(e) => {
@@ -264,7 +275,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
               </div>
             </div>
           </div>
-          
+
           {/* Content section */}
           <div>
             {isProcessing ? (
@@ -286,11 +297,11 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                 <h3 className="font-medium text-sm mb-2 line-clamp-1">
                   {getHeadline(post.content)}
                 </h3>
-                
+
                 <p className="text-sm text-gray-700 line-clamp-3 mb-2">
                   {truncateText(post.content || "", 180)}
                 </p>
-                
+
                 {post.postImage && (
                   <div className="mt-2 mb-2">
                     <img 
@@ -300,14 +311,14 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                     />
                   </div>
                 )}
-                
+
                 {post.summary && (
                   <div className="mt-2 mb-2 p-2 bg-gray-50 rounded-md text-sm text-gray-600">
-                    <p className="font-medium text-xs text-gray-500 mb-1">Summary:</p>
+                    
                     <p className="text-xs line-clamp-2">{post.summary}</p>
                   </div>
                 )}
-                
+
                 {/* Categories */}
                 <div className="mt-2">
                   <div className="overflow-x-auto pb-1">
@@ -330,25 +341,15 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                     </div>
                   </div>
                 </div>
-                
+
                 {/* URL */}
-                <div className="mt-2 text-xs text-gray-500 truncate">
-                  <a 
-                    href={post.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:text-primary hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {post.url}
-                  </a>
-                </div>
+                
               </>
             )}
           </div>
         </div>
       </div>
-      
+
       {/* Full Post Dialog */}
       <Dialog open={isFullPostDialogOpen} onOpenChange={setIsFullPostDialogOpen}>
         <DialogContent className="sm:max-w-[680px]">
@@ -396,7 +397,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Categories Dialog */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
         <DialogContent>
@@ -447,7 +448,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                         });
                         return;
                       }
-                      
+
                       setNewCategories([...newCategories, newCategory.trim()]);
                       setSelectedCategories([...selectedCategories, newCategory.trim()]);
                       setNewCategory('');
@@ -473,7 +474,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
