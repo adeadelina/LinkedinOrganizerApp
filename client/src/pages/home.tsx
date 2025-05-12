@@ -158,6 +158,19 @@ export default function Home() {
     // Skip posts that are still processing or failed
     if (post.processingStatus !== "completed") return false;
     
+    // Apply search filter if there's a search term
+    if (searchTerm) {
+      if (searchBy === "keyword") {
+        const contentLower = (post.content || "").toLowerCase();
+        const searchTermLower = searchTerm.toLowerCase();
+        if (!contentLower.includes(searchTermLower)) return false;
+      } else if (searchBy === "author") {
+        const authorLower = (post.authorName || "").toLowerCase();
+        const searchTermLower = searchTerm.toLowerCase();
+        if (!authorLower.includes(searchTermLower)) return false;
+      }
+    }
+
     // Apply category filter
     if (selectedCategories.length === 0) return true;
     
