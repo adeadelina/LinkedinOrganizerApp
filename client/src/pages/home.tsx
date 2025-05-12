@@ -279,12 +279,8 @@ export default function Home() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                 {/* Content Analyzer Header Section */}
                 <Card className="mb-6">
-                  <CardHeader className="px-6">
-                    <CardDescription>Extract, analyze, and categorize LinkedIn posts</CardDescription>
-                  </CardHeader>
-                  
-                  {/* Input Section */}
-                  <CardContent className="border-t border-gray-200 px-6 py-5">
+                  <CardContent className="px-6 py-5">
+                    <h1 className="text-2xl font-semibold text-gray-900 mb-4">Extract, analyze, and categorize LinkedIn posts</h1>
                     <Form {...form}>
                       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
