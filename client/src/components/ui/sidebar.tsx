@@ -94,11 +94,6 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
               count={100}
             />
             <SidebarItem 
-              href="/archive" 
-              icon={<Archive size={16} />} 
-              label="Archive" 
-            />
-            <SidebarItem 
               href="/unread" 
               icon={<Eye size={16} />} 
               label="Unread" 
