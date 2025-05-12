@@ -30,7 +30,7 @@ interface PostBookmarkCardProps {
   className?: string;
 }
 
-export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, className }: PostBookmarkCardProps) {
+export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, className = "" }: PostBookmarkCardProps) {
   const { toast } = useToast();
   const [isFullPostDialogOpen, setIsFullPostDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);

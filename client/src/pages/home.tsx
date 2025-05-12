@@ -405,13 +405,13 @@ export default function Home() {
                         )}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
                         {sortedPosts.map((post) => (
                           <PostBookmarkCard 
                             key={post.id} 
                             post={post} 
                             onRefetch={refetchPosts}
-                            className="h-full"
+                            className="h-full bg-white hover:shadow-lg transition-shadow duration-200"
                           />
                         ))}
                       </div>
