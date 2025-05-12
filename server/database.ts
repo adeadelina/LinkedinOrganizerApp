@@ -3,7 +3,7 @@ import postgres from "postgres";
 import * as schema from "../shared/schema";
 
 // Create a PostgreSQL client
-const queryClient = postgres(process.env.DATABASE_URL!);
+const queryClient = postgres(process.env.DATABASE_URL || 'postgres://postgres:postgres@0.0.0.0:5432/postgres');
 
 // Create a Drizzle instance
 export const db = drizzle(queryClient);
