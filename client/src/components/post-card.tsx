@@ -226,12 +226,8 @@ export function PostCard({ post, onRefetch }: PostCardProps) {
                   </h3>
                   <p className="text-sm text-gray-500">
                     {post.publishedDate ? 
-                      `Posted ${new Date(post.publishedDate).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}` : 
-                      (post.createdAt ? `Added ${getTimeElapsed(post.createdAt)}` : 'Date unknown')}
+                      new Date(post.publishedDate).toLocaleDateString() : 
+                      'Date unknown'}
                   </p>
                 </div>
               </div>
