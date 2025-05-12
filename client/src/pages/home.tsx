@@ -38,7 +38,7 @@ export default function Home() {
   const [sortOrder, setSortOrder] = useState<string>("Most Recent");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchBy, setSearchBy] = useState<"keyword" | "author">("keyword");
-  
+
   // Create form with zod validation
   const form = useForm<{ url: string }>({
     resolver: zodResolver(contentUrlSchema),
@@ -90,7 +90,7 @@ export default function Home() {
     },
     onSuccess: (data) => {
       console.log("Analysis success, data:", data);
-      
+
       // Handle the response
       if (data.exists) {
         toast({
@@ -107,10 +107,10 @@ export default function Home() {
           duration: 5000, // 5 seconds
         });
       }
-      
+
       // Reset the form after showing the toast message
       form.reset();
-      
+
       // Set up multiple refetches to catch status changes
       const refetchIntervals = [2000, 5000, 10000]; // Refetch after 2s, 5s, and 10s
       refetchIntervals.forEach(interval => {
@@ -138,7 +138,7 @@ export default function Home() {
       console.log("Submission blocked: Already analyzing");
       return;
     }
-    
+
     if (!data.url.trim()) {
       console.log("Submission blocked: Empty URL");
       toast({
@@ -148,7 +148,7 @@ export default function Home() {
       });
       return;
     }
-    
+
     // Proceed with analysis
     analyzePost(data.url);
   };
@@ -157,13 +157,13 @@ export default function Home() {
   const filteredPosts = posts.filter((post) => {
     // Skip posts that are still processing or failed
     if (post.processingStatus !== "completed") return false;
-    
+
     // Apply search filter if there's a search term
     if (searchTerm) {
       const searchTermLower = searchTerm.toLowerCase();
       const contentLower = (post.content || "").toLowerCase();
       const authorLower = (post.authorName || "").toLowerCase();
-      
+
       if (searchBy === "keyword") {
         if (!contentLower.includes(searchTermLower)) return false;
       } else if (searchBy === "author") {
@@ -178,7 +178,7 @@ export default function Home() {
 
     // Apply category filter
     if (selectedCategories.length === 0) return true;
-    
+
     // Check if the post has at least one of the selected categories
     return post.categories && 
            Array.isArray(post.categories) && 
@@ -205,7 +205,7 @@ export default function Home() {
     if (selectedCategories.length > 0 && !selectedCategories.includes(category)) {
       return acc;
     }
-    
+
     // First filter posts by category and completion status
     let categoryPosts = posts.filter(post => 
       // Include only completed posts with this category
@@ -214,7 +214,7 @@ export default function Home() {
       post.categories?.includes(category) && 
       post.processingStatus === "completed"
     );
-    
+
     // Then apply search filter if there's a search term
     if (searchTerm.trim()) {
       categoryPosts = categoryPosts.filter(post => {
@@ -223,19 +223,19 @@ export default function Home() {
           const contentLower = (post.content || "").toLowerCase();
           const summaryLower = (post.summary || "").toLowerCase();
           const searchTermLower = searchTerm.toLowerCase();
-          
+
           return contentLower.includes(searchTermLower) || summaryLower.includes(searchTermLower);
         } else if (searchBy === "author") {
           // Search by author name
           const authorLower = (post.authorName || "").toLowerCase();
           const searchTermLower = searchTerm.toLowerCase();
-          
+
           return authorLower.includes(searchTermLower);
         }
         return true;
       });
     }
-    
+
     if (categoryPosts.length > 0) {
       acc[category] = categoryPosts;
     }
@@ -248,7 +248,7 @@ export default function Home() {
       <div className="flex-shrink-0">
         <Navbar />
       </div>
-      
+
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <Sidebar 
@@ -312,7 +312,7 @@ export default function Home() {
                     </Form>
                   </CardContent>
                 </Card>
-                
+
                 {/* Results Section */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between px-6 py-5">
@@ -377,10 +377,10 @@ export default function Home() {
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   {/* List of analyzed content with grid layout */}
                   <CardContent className="px-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center mb-4">
                       <div className="font-medium text-lg flex items-center gap-2">
                         <BookmarkPlus className="h-5 w-5 text-primary" />
                         <span>All bookmarks</span>
@@ -388,26 +388,8 @@ export default function Home() {
                           ({isLoadingPosts ? '...' : posts.filter(p => p.processingStatus === "completed").length})
                         </span>
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 flex items-center gap-1"
-                        >
-                          <Grid className="h-4 w-4" />
-                          <span className="sr-only sm:not-sr-only">Grid</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 flex items-center gap-1"
-                        >
-                          <List className="h-4 w-4" />
-                          <span className="sr-only sm:not-sr-only">List</span>
-                        </Button>
-                      </div>
                     </div>
-                    
+
                     {isLoadingPosts ? (
                       <div className="p-6 text-center">Loading content...</div>
                     ) : sortedPosts.length === 0 ? (
@@ -487,7 +469,7 @@ export default function Home() {
                           </div>
                         )}
                       </div>
-                      
+
                       {Object.entries(postsByCategory).map(([category, categoryPosts]) => (
                         <div key={category} className="mb-8">
                           <h3 className="text-md font-medium text-gray-800 mb-4 flex items-center gap-2">
@@ -506,7 +488,7 @@ export default function Home() {
                               ({categoryPosts.length} {categoryPosts.length === 1 ? 'bookmark' : 'bookmarks'})
                             </span>
                           </h3>
-                          
+
                           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {categoryPosts.slice(0, 3).map((post) => (
                               <div 
@@ -517,7 +499,7 @@ export default function Home() {
                                   const target = e.target as HTMLElement;
                                   const isButton = target.closest('button') || target.closest('a');
                                   const isCategoryTag = target.closest('.category-tag');
-                                  
+
                                   if (!isButton && !isCategoryTag) {
                                     // Find the PostCard component in the hidden div and trigger dialog opening
                                     const postCardRef = document.getElementById(`post-card-ref-${post.id}`);
@@ -527,7 +509,7 @@ export default function Home() {
                                       const dialogRef = document.createElement('div');
                                       dialogRef.id = `post-dialog-${post.id}`;
                                       dialogRef.className = 'fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center';
-                                      
+
                                       // Add click handler to close when clicking outside the dialog content
                                       dialogRef.addEventListener('click', (event: MouseEvent) => {
                                         // Only close if clicking the backdrop (dialogRef itself) and not its children
@@ -535,17 +517,17 @@ export default function Home() {
                                           document.body.removeChild(dialogRef);
                                         }
                                       });
-                                      
+
                                       const dialogContent = document.createElement('div');
                                       dialogContent.className = 'bg-white rounded-lg max-w-[680px] max-h-[80vh] overflow-y-auto w-full m-4';
-                                      
+
                                       // Header section
                                       const header = document.createElement('div');
                                       header.className = 'border-b p-4 flex justify-between items-center';
-                                      
+
                                       const title = document.createElement('div');
                                       title.className = 'flex items-center';
-                                      
+
                                       // Author image/avatar
                                       if (post.authorImage) {
                                         const img = document.createElement('img');
@@ -559,13 +541,13 @@ export default function Home() {
                                         avatar.textContent = post.authorName?.[0] || 'U';
                                         title.appendChild(avatar);
                                       }
-                                      
+
                                       // Author name
                                       const authorName = document.createElement('div');
                                       authorName.className = 'font-medium';
                                       authorName.textContent = post.authorName || 'Content Author';
                                       title.appendChild(authorName);
-                                      
+
                                       // Close button
                                       const closeBtn = document.createElement('button');
                                       closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>';
@@ -573,26 +555,26 @@ export default function Home() {
                                       closeBtn.onclick = () => {
                                         document.body.removeChild(dialogRef);
                                       };
-                                      
+
                                       header.appendChild(title);
                                       header.appendChild(closeBtn);
                                       dialogContent.appendChild(header);
-                                      
+
                                       // Content section
                                       const content = document.createElement('div');
                                       content.className = 'p-4';
-                                      
+
                                       // URL as subtitle
                                       const urlText = document.createElement('p');
                                       urlText.className = 'text-sm text-gray-500 mb-4';
                                       urlText.textContent = post.url || '';
                                       content.appendChild(urlText);
-                                      
+
                                       // Post content
                                       if (post.content) {
                                         const contentDiv = document.createElement('div');
                                         contentDiv.className = 'text-sm text-gray-700 space-y-3';
-                                        
+
                                         post.content.split('\n').forEach(paragraph => {
                                           if (paragraph.trim()) {
                                             const p = document.createElement('p');
@@ -603,7 +585,7 @@ export default function Home() {
                                             contentDiv.appendChild(document.createElement('br'));
                                           }
                                         });
-                                        
+
                                         content.appendChild(contentDiv);
                                       } else {
                                         // No content message
@@ -626,57 +608,57 @@ export default function Home() {
                                         `;
                                         content.appendChild(noContent);
                                       }
-                                      
+
                                       // Categories section
                                       if (post.categories && post.categories.length > 0) {
                                         const categoriesSection = document.createElement('div');
                                         categoriesSection.className = 'mt-6 pt-4 border-t border-gray-200';
-                                        
+
                                         const categoriesTitle = document.createElement('h4');
                                         categoriesTitle.className = 'text-sm font-medium mb-2';
                                         categoriesTitle.textContent = 'Categories:';
                                         categoriesSection.appendChild(categoriesTitle);
-                                        
+
                                         const categoriesList = document.createElement('div');
                                         categoriesList.className = 'flex flex-wrap gap-1.5';
-                                        
+
                                         post.categories.forEach(category => {
                                           const badge = document.createElement('span');
                                           badge.className = 'inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-700';
                                           badge.textContent = category;
                                           categoriesList.appendChild(badge);
                                         });
-                                        
+
                                         categoriesSection.appendChild(categoriesList);
                                         content.appendChild(categoriesSection);
                                       }
-                                      
+
                                       dialogContent.appendChild(content);
-                                      
+
                                       // Footer with actions
                                       const footer = document.createElement('div');
                                       footer.className = 'border-t p-4 flex justify-end';
-                                      
+
                                       // View original link
                                       const viewOriginalLink = document.createElement('a');
                                       viewOriginalLink.href = post.url || '';
                                       viewOriginalLink.target = '_blank';
                                       viewOriginalLink.rel = 'noopener noreferrer';
-                                      
+
                                       const viewButton = document.createElement('button');
                                       viewButton.className = 'px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-transparent rounded-md hover:bg-blue-100';
                                       viewButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg> View Original';
-                                      
+
                                       viewOriginalLink.appendChild(viewButton);
-                                      
+
                                       footer.appendChild(viewOriginalLink);
-                                      
+
                                       dialogContent.appendChild(footer);
                                       dialogRef.appendChild(dialogContent);
-                                      
+
                                       // Add to the DOM
                                       document.body.appendChild(dialogRef);
-                                      
+
                                       // Prevent event bubbling
                                       e.stopPropagation();
                                     }
@@ -710,11 +692,11 @@ export default function Home() {
                                     </div>
                                   </div>
                                 </div>
-                                
+
                                 <div className="mt-2">
                                   <p className="text-sm text-gray-500 line-clamp-3">{post.content}</p>
                                 </div>
-                                
+
                                 <div className="mt-3">
                                   <div className="flex flex-wrap gap-1">
                                     {post.categories?.map((cat) => (
@@ -738,7 +720,7 @@ export default function Home() {
                                       />
                                     ))}
                                   </div>
-                                  
+
                                   <div className="mt-2 flex justify-between">
                                     <Button
                                       variant="outline"
@@ -769,9 +751,11 @@ export default function Home() {
                                       </Button>
                                     </a>
                                   </div>
-                                  
+
                                   {/* Hidden PostCard to handle category editing dialog */}
-                                  <div className="hidden">
+                                  <div className="hiddenCode analysis: The code removes the Grid and List toggle buttons from the CardContent section.
+```
+">
                                     <div id={`post-card-ref-${post.id}`}>
                                       <PostCard post={post} onRefetch={refetchPosts} />
                                     </div>
@@ -782,7 +766,7 @@ export default function Home() {
                           </div>
                         </div>
                       ))}
-                      
+
                       {Object.keys(postsByCategory).length > 0 && (
                         <div className="flex justify-center mt-8">
                           <Button variant="outline" className="flex items-center">
