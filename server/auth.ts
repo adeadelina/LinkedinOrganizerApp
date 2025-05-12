@@ -189,6 +189,7 @@ export function registerAuthRoutes(app: Express): void {
     try {
       const { username, password, name, email } = req.body;
 
+      // Validate required fields
       if (!username || !password) {
         return res.status(400).json({ error: "Username and password are required" });
       }
@@ -215,23 +216,23 @@ export function registerAuthRoutes(app: Express): void {
         }
       }
 
-      try {
-        // Hash the password
-        const hashedPassword = await hash(password, 10);
+      // Hash the password
+      const hashedPassword = await hash(password, 10);
 
-        // Create the user
-        const user = await storage.createUser({
-          username,
-          password: hashedPassword,
-          name,
-          email,
-        });
+      // Create the user
+      const user = await storage.createUser({
+        username,
+        password: hashedPassword,
+        name,
+        email,
+      });
 
-        if (!user || !user.id) {
-          throw new Error("Failed to create user account");
-        }
+      if (!user || !user.id) {
+        return res.status(500).json({ error: "Failed to create user account" });
+      }
 
-        // Log the user in
+      // Log the user in
+      return new Promise<void>((resolve, reject) => {
         req.login(
           {
             id: user.id,
@@ -242,24 +243,26 @@ export function registerAuthRoutes(app: Express): void {
           },
           (err) => {
             if (err) {
-              return res.status(500).json({ error: "Failed to log in after registration" });
+              reject(err);
+              return;
             }
-            return res.status(201).json({
+            res.status(201).json({
               id: user.id,
               username: user.username,
               name: user.name,
               email: user.email,
               picture: user.picture
             });
+            resolve();
           }
         );
-      } catch (error) {
-        console.error("Registration error:", error);
-        res.status(500).json({ error: "Failed to register user" });
-      }
+      });
+
     } catch (error) {
       console.error("Registration error:", error);
-      res.status(500).json({ error: "Failed to register user" });
+      // Send a more specific error message if available
+      const errorMessage = error instanceof Error ? error.message : "Failed to register user";
+      res.status(500).json({ error: errorMessage });
     }
   });
 
