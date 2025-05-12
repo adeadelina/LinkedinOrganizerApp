@@ -314,7 +314,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
 
                 {post.summary && (
                   <div className="mt-2 mb-2 p-2 bg-gray-50 rounded-md text-sm text-gray-600">
-                    
+
                     <p className="text-xs line-clamp-2">{post.summary}</p>
                   </div>
                 )}
@@ -343,7 +343,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                 </div>
 
                 {/* URL */}
-                
+
               </>
             )}
           </div>
@@ -353,32 +353,45 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
       {/* Full Post Dialog */}
       <Dialog open={isFullPostDialogOpen} onOpenChange={setIsFullPostDialogOpen}>
         <DialogContent className="sm:max-w-[680px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {post.authorImage && (
-                <img 
-                  src={post.authorImage} 
-                  alt={post.authorName || 'Author'} 
-                  className="h-8 w-8 rounded-full"
-                />
-              )}
-              <span>{post.authorName || 'Post Content'}</span>
-            </DialogTitle>
-            <DialogDescription>
-              <a href={post.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                {post.url}
-              </a>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 max-h-[70vh] overflow-y-auto">
-            {post.content?.split('\n').map((paragraph, i) => (
-              paragraph ? <p key={i} className="mb-3">{paragraph}</p> : <br key={i} />
-            ))}
-            {post.postImage && (
-              <div className="mt-4">
-                <img src={post.postImage} alt="Post content" className="max-w-full rounded-lg" />
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {post.authorImage ? (
+                  <img 
+                    src={post.authorImage} 
+                    alt={post.authorName || 'Author'} 
+                    className="h-8 w-8 rounded-full"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500 font-medium text-sm">
+                      {post.authorName?.[0] || '?'}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <span className="font-semibold">{post.authorName || 'Post Content'}</span>
+                  <div className="text-sm text-gray-500 flex items-center mt-1">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    {formatRelativeTime(post.createdAt || new Date())}
+                  </div>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4 max-h-[70vh] overflow-y-auto">
+              <div className="space-y-4">
+                {post.content?.split('\n').map((paragraph, i) => (
+                  paragraph ? (
+                    <p key={i} className="text-base leading-relaxed text-gray-700">
+                      {paragraph}
+                    </p>
+                  ) : <br key={i} />
+                ))}
               </div>
-            )}
+              {post.postImage && (
+                <div className="mt-6">
+                  <img src={post.postImage} alt="Post content" className="w-full rounded-lg shadow-md" />
+                </div>
+              )}
             {post.summary && (
               <div className="mt-6 p-4 bg-gray-50 rounded-md border border-gray-100">
                 <h4 className="font-medium text-sm mb-2">Summary:</h4>
