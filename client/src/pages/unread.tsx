@@ -1,6 +1,8 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PostBookmarkCard } from "@/components/post-bookmark-card";
@@ -47,6 +49,14 @@ export default function Unread() {
     <div className="flex flex-col h-screen overflow-hidden bg-white">
       <div className="flex-shrink-0">
         <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4">
+          <Link href="/">
+            <a className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700">
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back to Main Page
+            </a>
+          </Link>
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden">
