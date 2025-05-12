@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Home() {
   const { toast } = useToast();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
   const [sortOrder, setSortOrder] = useState<string>("Most Recent");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchBy, setSearchBy] = useState<"keyword" | "author">("keyword");
@@ -76,6 +77,17 @@ export default function Home() {
     refetchOnWindowFocus: "always", // Always refetch when window regains focus
     refetchOnReconnect: "always"
   });
+
+  // Extract unique authors from posts
+  const uniqueAuthors = useMemo(() => {
+    const authors = new Set<string>();
+    posts.forEach(post => {
+      if (post.authorName) {
+        authors.add(post.authorName);
+      }
+    });
+    return Array.from(authors);
+  }, [posts]);
 
   // Mutation for analyzing a LinkedIn post
   const { mutate: analyzePost, isPending: isAnalyzing } = useMutation({
@@ -186,6 +198,10 @@ export default function Home() {
            selectedCategories
              .filter(cat => categories.includes(cat))
              .some(category => post.categories?.includes(category) ?? false);
+  }).filter((post) => {
+    // Apply author filter
+    if (selectedAuthors.length === 0) return true;
+    return selectedAuthors.includes(post.authorName || "");
   });
 
   // Sort filtered posts
@@ -382,18 +398,46 @@ export default function Home() {
                           </PopoverContent>
                         </Popover>
 
-                        <Select 
-                          value={sortOrder} 
-                          onValueChange={setSortOrder}
-                        >
-                          <SelectTrigger className="w-[150px]">
-                            <SelectValue placeholder="Most Recent" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Most Recent">Most Recent</SelectItem>
-                            <SelectItem value="Oldest First">Oldest First</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-[180px] justify-between">
+                              {selectedAuthors.length === 0 ? (
+                                "All Authors"
+                              ) : (
+                                `${selectedAuthors.length} selected`
+                              )}
+                              <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[200px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search authors..." />
+                              <CommandList>
+                                <CommandEmpty>No authors found.</CommandEmpty>
+                                <CommandGroup className="max-h-[200px] overflow-auto">
+                                  {uniqueAuthors.map((author) => (
+                                    <CommandItem
+                                      key={author}
+                                      onSelect={() => {
+                                        setSelectedAuthors((prev) =>
+                                          prev.includes(author)
+                                            ? prev.filter((a) => a !== author)
+                                            : [...prev, author]
+                                        );
+                                      }}
+                                    >
+                                      <Checkbox
+                                        checked={selectedAuthors.includes(author)}
+                                        className="mr-2"
+                                      />
+                                      {author}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   </CardHeader>
