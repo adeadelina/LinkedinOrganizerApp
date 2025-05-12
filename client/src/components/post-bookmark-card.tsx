@@ -182,10 +182,10 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
         }
       }}
     >
-      <div className="p-5 flex flex-col flex-grow">
+      <div className="p-3 sm:p-4 lg:p-5 flex flex-col flex-grow">
         <div className="flex flex-col">
           {/* Author row */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
             {onSelect && (
               <Checkbox 
                 checked={isSelected} 

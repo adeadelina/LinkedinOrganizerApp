@@ -290,10 +290,10 @@ export default function Home() {
         />
 
         {/* Main Content */}
-        <div className="flex flex-col w-0 flex-1 overflow-hidden">
+        <div className="flex flex-col flex-1 overflow-hidden">
           <main className="relative flex-1 overflow-y-auto focus:outline-none bg-gray-50">
-            <div className="py-6">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <div className="py-4 sm:py-6">
+              <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
                 {/* Content Analyzer Header Section */}
                 <Card className="mb-6">
                   <CardContent className="px-6 py-5">
@@ -306,18 +306,18 @@ export default function Home() {
                           name="url"
                           render={({ field }) => (
                             <FormItem>
-                              <div className="flex items-start gap-3">
-                                <FormControl>
+                              <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
+                                <FormControl className="w-full">
                                   <Input 
                                     placeholder="Add your Linkedin post link" 
                                     {...field} 
-                                    className="flex-1"
+                                    className="w-full"
                                   />
                                 </FormControl>
                                 <Button 
                                   type="submit" 
                                   disabled={isAnalyzing}
-                                  className="bg-[#0A66C2] hover:bg-blue-700"
+                                  className="w-full sm:w-auto bg-[#0A66C2] hover:bg-blue-700"
                                 >
                                   {isAnalyzing ? "Processing..." : "Import content"}
                                 </Button>
@@ -336,16 +336,18 @@ export default function Home() {
                   <CardHeader className="px-6 py-5">
                     <CardTitle className="text-lg font-medium mb-4">Analyzed content</CardTitle>
                     <div className="space-y-4">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Search..."
-                          value={searchTerm}
-                          onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                          }}
-                        />
+                      <div className="flex flex-col sm:flex-row gap-2 mb-2">
+                        <div className="flex-1">
+                          <Input
+                            placeholder="Search..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                              setSearchTerm(e.target.value);
+                            }}
+                          />
+                        </div>
                         <Select value={searchBy} onValueChange={(value: "keyword" | "author") => setSearchBy(value)}>
-                          <SelectTrigger className="w-[140px]">
+                          <SelectTrigger className="w-full sm:w-[140px]">
                             <SelectValue placeholder="Search by..." />
                           </SelectTrigger>
                           <SelectContent>
@@ -354,7 +356,7 @@ export default function Home() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className="w-[180px] justify-between">
@@ -485,7 +487,7 @@ export default function Home() {
                         )}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 p-3 sm:p-4 lg:p-6">
                         {sortedPosts.map((post) => (
                           <PostBookmarkCard 
                             key={post.id} 
