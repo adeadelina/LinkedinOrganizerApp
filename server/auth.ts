@@ -55,11 +55,15 @@ export function setupAuth(app: Express): void {
       },
       async (username, password, done) => {
         try {
-          const user = await storage.getUserByUsername(username);
+          // Try to find user by username or email
+          let user = await storage.getUserByUsername(username);
+          if (!user && username.includes('@')) {
+            user = await storage.getUserByEmail(username);
+          }
           
           // User not found
           if (!user) {
-            return done(null, false, { message: "User not found" });
+            return done(null, false, { message: "Invalid credentials" });
           }
           
           // Password validation (only for local accounts)
