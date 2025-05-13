@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-
+import { setupAuth, registerAuthRoutes } from "./auth";
 import { runMigrations } from "./migrations";
 import PgSession from "connect-pg-simple";
 import { config } from "dotenv";
@@ -60,6 +60,9 @@ app.use(session({
   }
 }));
 
+// Initialize authentication
+setupAuth(app);
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -101,6 +104,9 @@ app.use((req, res, next) => {
     // Continue even if migrations fail
   }
 
+  // Register authentication routes
+  registerAuthRoutes(app);
+  
   // Register API routes
   const server = await registerRoutes(app);
 
