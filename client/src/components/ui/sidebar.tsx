@@ -140,17 +140,6 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
         )}
       </div>
 
-      {/* Sources section */}
-      <div className="mb-4">
-        <button className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50">
-          <span className="text-sm font-medium flex items-center">
-            <Database size={16} className="mr-2 text-primary" />
-            Sources
-          </span>
-          <ChevronDown size={16} className="text-gray-500" />
-        </button>
-      </div>
-
       <div className="mt-auto px-4 py-2 text-xs text-gray-500 border-t border-gray-100">
         © {new Date().getFullYear()} Content Analyzer
       </div>
