@@ -175,7 +175,15 @@ export class MemStorage implements IStorage {
 
   // Categories operations
   async getAllCategories(): Promise<string[]> {
-    return categories;
+    // Get all unique categories from posts
+    const posts = Array.from(this.posts.values());
+    const postCategories = posts
+      .flatMap(post => post.categories || [])
+      .filter((category, index, self) => self.indexOf(category) === index);
+    
+    // Combine with default categories and remove duplicates
+    const allCategories = [...new Set([...categories, ...postCategories])];
+    return allCategories.sort();
   }
   
   async addCategory(category: string): Promise<string[]> {
@@ -183,7 +191,8 @@ export class MemStorage implements IStorage {
     if (!categories.some(c => c.toLowerCase() === category.toLowerCase())) {
       categories.push(category);
     }
-    return categories;
+    // Get all categories including ones from posts
+    return this.getAllCategories();
   }
   
   async deleteCategory(category: string): Promise<string[]> {
