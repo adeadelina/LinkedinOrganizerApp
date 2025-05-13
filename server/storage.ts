@@ -190,17 +190,17 @@ export class MemStorage implements IStorage {
     if (!categories.includes(category)) {
       // Add to global categories array
       categories.push(category);
+      // Sort categories alphabetically
+      categories.sort();
       
-      // Get all categories from posts to ensure we don't lose any
-      const postCategories = Array.from(this.posts.values())
-        .flatMap(post => post.categories || [])
-        .filter((c, i, self) => self.indexOf(c) === i);
-      
-      // Combine all categories and remove duplicates
-      categories = [...new Set([...categories, ...postCategories])].sort();
+      // Also ensure category exists in any posts that reference it
+      Array.from(this.posts.values()).forEach(post => {
+        if (post.categories?.includes(category)) {
+          post.categories = [...new Set([...post.categories])];
+        }
+      });
     }
     
-    // Return a copy to prevent external mutations
     return Promise.resolve([...categories]);
   }
 

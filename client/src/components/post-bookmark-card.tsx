@@ -487,8 +487,12 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                         setNewCategories(prev => [...prev, trimmedCategory]);
                         const updatedCategories = [...availableCategories, trimmedCategory].sort();
                         queryClient.setQueryData(['/api/categories'], updatedCategories);
-                        // Prevent immediate refetch that could override our changes
-                        queryClient.cancelQueries({ queryKey: ['/api/categories'] });
+                        // Disable automatic background refetching
+                        queryClient.setQueryDefaults(['/api/categories'], {
+                          staleTime: Infinity,
+                          refetchOnWindowFocus: false,
+                          refetchOnMount: false
+                        });
                       }
                       // Add to selected categories if not already selected and under limit
                       if (!selectedCategories.includes(trimmedCategory) && selectedCategories.length < MAX_CATEGORIES_PER_POST) {
