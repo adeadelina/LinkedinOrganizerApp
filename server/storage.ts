@@ -1,7 +1,15 @@
-import { categories, type Post, type InsertPost } from "@shared/schema";
+import { categories, type User, type InsertUser, type Post, type InsertPost } from "@shared/schema";
 
 // Storage interface for CRUD operations
 export interface IStorage {
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  createUser(user: Partial<InsertUser>): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  
   // Post operations
   getAllPosts(): Promise<Post[]>;
   getPostById(id: number): Promise<Post | undefined>;
@@ -17,12 +25,74 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private users: Map<number, User>;
   private posts: Map<number, Post>;
+  private userCurrentId: number;
   private postCurrentId: number;
 
   constructor() {
+    this.users = new Map();
     this.posts = new Map();
+    this.userCurrentId = 1;
     this.postCurrentId = 1;
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.googleId === googleId,
+    );
+  }
+
+  async createUser(userData: Partial<InsertUser>): Promise<User> {
+    const id = this.userCurrentId++;
+    const createdAt = new Date();
+    const user: User = {
+      id,
+      username: userData.username || `user_${id}`,
+      password: userData.password || null,
+      name: userData.name || null,
+      email: userData.email || null,
+      googleId: userData.googleId || null,
+      picture: userData.picture || null,
+      createdAt,
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser: User = {
+      ...user,
+      username: userData.username !== undefined ? userData.username : user.username,
+      password: userData.password !== undefined ? userData.password : user.password,
+      name: userData.name !== undefined ? userData.name : user.name,
+      email: userData.email !== undefined ? userData.email : user.email,
+      googleId: userData.googleId !== undefined ? userData.googleId : user.googleId,
+      picture: userData.picture !== undefined ? userData.picture : user.picture,
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   // Post operations
@@ -73,27 +143,6 @@ export class MemStorage implements IStorage {
     
     this.posts.set(id, post);
     return post;
-  }
-
-  async getUserByUsername(username: string): Promise<User | null> {
-    const user = Array.from(this.users.values()).find(
-      (u) => u.username.toLowerCase() === username.toLowerCase()
-    );
-    return user || null;
-  }
-
-  async getUserByEmail(email: string): Promise<User | null> {
-    const user = Array.from(this.users.values()).find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
-    return user || null;
-  }
-
-  async getUserByGoogleId(googleId: string): Promise<User | null> {
-    const user = Array.from(this.users.values()).find(
-      (u) => u.googleId === googleId
-    );
-    return user || null;
   }
 
   async updatePost(id: number, postUpdate: Partial<InsertPost>): Promise<Post | undefined> {
