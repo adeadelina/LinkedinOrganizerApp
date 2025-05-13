@@ -1,0 +1,114 @@
+Changes to User Model
+Your user model will need a way to check if the user signing in with Google has an existing account with your application. To do this, you can add a field for a Google ID to your User model.
+
+/* models/User.js */
+googleId: {
+  type: DataTypes.STRING,
+  allowNull: true, // This field will only be populated for OAuth users
+},
+Depending on the configuration of your model, it may also be necessary to make changes to the password field in your model.
+
+Configuring Passport
+To set up authentication via Google, I used Passport.js, a middleware for authentication for Node.js applications.
+
+First, we will need a few packages, which can be installed by running:
+
+   npm install passport passport-oauth passport-google-oauth20
+Next, create a configuration file and add the following dependencies and middleware setup, with appropriate alterations:
+
+/* config/passport.js */
+
+/* Dependencies */
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const User = require("../models/User");  // Import your user model
+
+/* Passport Middleware */
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,  // Client ID
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,  // Client secret
+      callbackURL: "https://your-site.com/auth/google/callback",
+    },
+    async function (token, tokenSecret, profile, done) {
+      try {
+        console.log(profile);
+        const [user, created] = await User.findOrCreate({
+          where: {
+            googleId: profile.id,
+          },
+          defaults: {
+            // Initialize necessary fields in User model here, like this:
+            first: profile.name.givenName,
+            last: profile.name.familyName,
+            email: profile.emails[0].value,
+          },
+        });
+        return done(null, traveler);
+      } catch (err) {
+        return done(err, null);
+      }
+    }
+  )
+);
+
+/* How to store the user information in the session */
+passport.serializeUser(function (user, done) {
+  done(null, user.id);
+});
+
+/* How to retrieve the user from the session */
+passport.deserializeUser(function (id, done) {
+  User.findById(id, function (err, user) {
+    done(err, user);
+  });
+});
+
+/* Exporting Passport Configuration */
+module.exports = passport;
+Next, integrate Passport into your server:
+
+/* server.js */
+
+/* Import passport configuration */
+const express = require('express');
+const session = require('express-session');
+const passport = require('./config/passport');
+const app = express();
+
+/* OAuth Middleware */
+app.use(passport.initialize());
+app.use(passport.session());
+Routes for authentication
+Add routes for Google authentication:
+
+/* controllers/auth-routes.js */
+
+/* Dependencies */
+const router = require("express").Router();
+const passport = require("../config/passport");
+
+/* Route to start OAuth2 authentication */
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["https://www.googleapis.com/auth/plus.login", "email"],
+  })
+);
+
+/* Callback route for OAuth2 authentication */
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  function (req, res) {
+    // Successful authentication
+    console.log(req.user);
+    req.session.save(() => {
+      res.redirect("/");  // Edit for correct redirect link
+    });
+  }
+);
+
+/* EXPORTS */
+module.exports = router;
