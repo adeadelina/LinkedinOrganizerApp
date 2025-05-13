@@ -222,8 +222,8 @@ export function registerAuthRoutes(app: Express): void {
       // Create the user
       const user = await storage.createUser({
         username,
-        password: hashedPassword,
-        name,
+        passwordHash: hashedPassword,
+        name: name || username,
         email,
       });
 
