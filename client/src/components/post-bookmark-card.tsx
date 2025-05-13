@@ -494,9 +494,26 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ category: trimmedCategory })
-                        }).then(() => {
-                          // Refetch categories after successful addition
+                        })
+                        .then(response => {
+                          if (!response.ok) {
+                            throw new Error('Failed to add category');
+                          }
+                          return response.json();
+                        })
+                        .then(updatedCategories => {
+                          // Update cache with server response
+                          queryClient.setQueryData(['/api/categories'], updatedCategories);
+                          // Also invalidate to ensure fresh data
                           queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+                        })
+                        .catch(error => {
+                          console.error('Error adding category:', error);
+                          toast({
+                            title: "Error adding category",
+                            description: "Failed to add new category. Please try again.",
+                            variant: "destructive",
+                          });
                         });
                       }
                       // Add to selected categories if not already selected and under limit

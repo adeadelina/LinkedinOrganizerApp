@@ -193,19 +193,15 @@ export class MemStorage implements IStorage {
       // Add to global categories array
       categories.push(trimmedCategory);
       
-      // Get all unique categories from posts
-      const postCategories = Array.from(this.posts.values())
-        .flatMap(post => post.categories || [])
-        .filter((c, i, self) => self.indexOf(c) === i);
+      // Sort categories alphabetically
+      categories.sort();
       
-      // Combine all categories and ensure uniqueness
-      categories = [...new Set([...categories, ...postCategories])].sort();
-      
+      console.log('Category added successfully:', trimmedCategory);
       console.log('Updated categories:', categories);
     }
     
     // Always return a fresh copy of the categories array
-    return [...categories];
+    return Promise.resolve([...categories]);
   }
 
   async deleteCategory(category: string): Promise<string[]> {
