@@ -186,22 +186,16 @@ export class MemStorage implements IStorage {
   }
 
   async addCategory(category: string): Promise<string[]> {
-    // First check if the category exists (case-insensitive)
-    const categoryExists = categories.some(c => c.toLowerCase() === category.toLowerCase());
-    
-    if (!categoryExists) {
-      // Add to the global categories array
+    // Check if category exists (case-sensitive to maintain exact naming)
+    if (!categories.includes(category)) {
+      // Add to global categories array
       categories.push(category);
-      // Get categories from posts
-      const postCategories = Array.from(this.posts.values())
-        .flatMap(post => post.categories || [])
-        .filter((c, i, self) => self.indexOf(c) === i);
-      
-      // Combine all categories and remove duplicates
-      categories = [...new Set([...categories, ...postCategories])].sort();
+      // Sort categories alphabetically
+      categories.sort();
     }
     
-    return Promise.resolve([...categories]); // Return a copy to prevent mutation
+    // Return all categories including the new one
+    return Promise.resolve([...categories]);
   }
 
   async deleteCategory(category: string): Promise<string[]> {
