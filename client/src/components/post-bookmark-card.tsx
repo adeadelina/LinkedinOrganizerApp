@@ -362,28 +362,8 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                 )}
                 </div>
 
-                {/* Categories */}
-                <div className="mt-2">
-                  <div className="overflow-x-auto pb-1">
-                    <div className="flex flex-wrap gap-1">
-                      {post.categories?.slice(0, 3).map(category => (
-                        <CategoryFilter
-                          key={category}
-                          category={category}
-                          onClick={(e?: React.MouseEvent) => {
-                            if (e) e.stopPropagation();
-                          }}
-                          className="text-xs"
-                        />
-                      ))}
-                      {post.categories && post.categories.length > 3 && (
-                        <span className="text-xs text-gray-500 py-1">
-                          +{post.categories.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {/* Categories hidden but functionality maintained */}
+                <div className="mt-2"></div>
 
                 {/* URL */}
 
@@ -441,15 +421,8 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                   <p className="text-sm text-gray-700">{post.summary}</p>
                 </div>
             )}
-            <div className="mt-6 flex flex-wrap gap-1">
-              {post.categories?.map(category => (
-                <CategoryFilter
-                  key={category}
-                  category={category}
-                  onClick={() => {}}
-                />
-              ))}
-            </div>
+            {/* Categories hidden in dialog but functionality maintained */}
+            <div className="mt-6"></div>
           </div>
         </DialogContent>
       </Dialog>
