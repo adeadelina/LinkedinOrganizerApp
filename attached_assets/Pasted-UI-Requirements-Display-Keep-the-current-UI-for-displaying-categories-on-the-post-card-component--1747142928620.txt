@@ -1,0 +1,61 @@
+UI Requirements
+
+Display:
+
+Keep the current UI for displaying categories on the post card component as shown in the reference images.
+
+Edit Categories Modal:
+
+Maintain the existing UI for editing categories, but enhance it with these capabilities:
+
+Allow editing the name of any category by double-clicking on the category name in the list. On double-click, the category name should become an editable input field. Confirm changes by pressing Enter or clicking outside the input.
+
+Allow deleting a category directly from the list (e.g., via a trash icon or a delete button next to each category).
+
+Category Management Functionality
+
+Add Category:
+
+Enable users to add a new category by typing the name in the "New category name" input field and clicking "Add".
+
+When a new category is added, it should:
+
+Appear immediately in the categories list within the modal.
+
+Be checked/selected by default for the current post.
+
+Be shown as a tag on the post card component.
+
+Persist Categories:
+
+Ensure that the list of categories is persistent across posts. New categories added by users should be available for selection when editing categories on any post (not just the one where it was created).
+
+When editing categories for an uncategorized post, the updated list (including any new categories) should be available for selection.
+
+General Notes
+
+All category changes (add, edit, delete) should update the persistent categories list and reflect immediately in both the edit modal and the post card display.
+
+The UI/UX should remain intuitive and consistent with the reference images provided.
+
+Reference Images:
+
+[Image 1: Post card with category tags]
+
+[Image 2: Edit Categories modal with category list and add new field]
+
+Summary of User Actions Supported
+
+View categories on post cards.
+
+Open the edit categories modal to:
+
+Add new categories (which persist and are selected by default).
+
+Edit category names by double-clicking.
+
+Delete categories.
+
+Select/deselect categories for the post.
+
+See all categories (including newly added ones) when editing any post.
