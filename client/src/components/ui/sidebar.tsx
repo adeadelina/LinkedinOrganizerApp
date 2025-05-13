@@ -120,7 +120,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
           />
         </button>
 
-        {showCategories && categories.length > 0 && (
+        {showCategories && (
           <div className="px-4 py-2 space-y-2 max-h-64 overflow-y-auto">
              <Input
               type="text"
@@ -129,11 +129,12 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="mb-2"
             />
-            {filteredCategories.map(category => (
-              <div 
-                key={category}
-                className="flex items-center justify-between text-sm"
-              >
+            {filteredCategories.length > 0 ? (
+              filteredCategories.map(category => (
+                <div 
+                  key={category}
+                  className="flex items-center justify-between text-sm"
+                >
                 <button
                   className={cn(
                     "flex items-center text-left w-full px-2 py-1 rounded hover:bg-gray-50",
@@ -147,7 +148,12 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
                   <CheckSquare size={14} className="text-primary" />
                 )}
               </div>
-            ))}
+            ))
+            ) : (
+              <div className="text-sm text-gray-500 text-center py-2">
+                No categories found
+              </div>
+            )}
           </div>
         )}
       </div>
