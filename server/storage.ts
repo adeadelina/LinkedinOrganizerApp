@@ -195,14 +195,16 @@ export class MemStorage implements IStorage {
       
       // Check if category exists (case-sensitive)
       if (!categories.includes(trimmedCategory)) {
-        // Add to global categories array
+        // Add to global categories array and ensure persistence
         categories.push(trimmedCategory);
         // Sort categories alphabetically
         categories.sort();
+        console.log('Added new category:', trimmedCategory);
+        console.log('Updated categories list:', categories);
       }
       
-      // Return a clean array of strings
-      return categories.map(cat => String(cat));
+      // Return the full categories array
+      return [...categories];
     } catch (error) {
       console.error('Error adding category:', error);
       throw error;
