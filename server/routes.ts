@@ -14,8 +14,6 @@ import {
   extractSubstackInfo,
   reExtractLinkedInAuthor,
 } from "./openai";
-import { isAuthenticated } from "./auth";
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes - all prefixed with /api
 
@@ -171,7 +169,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete a category
   app.delete(
     "/api/categories/:category",
-    isAuthenticated,
     async (req: Request, res: Response) => {
       try {
         const { category } = req.params;
@@ -454,7 +451,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete a post
   app.delete(
     "/api/posts/:id",
-    isAuthenticated,
     async (req: Request, res: Response) => {
       try {
         const postId = parseInt(req.params.id);
