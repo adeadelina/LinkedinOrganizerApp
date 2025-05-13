@@ -108,7 +108,7 @@ export function setupAuth(app: Express): void {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           callbackURL: callbackURL,
-          scope: ["profile", "email"],
+          scope: ["https://www.googleapis.com/auth/plus.login", "email", "profile"],
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
