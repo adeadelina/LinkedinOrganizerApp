@@ -145,29 +145,47 @@ export class DbStorage implements IStorage {
   }
 
   async getAllCategories(): Promise<string[]> {
-    // For now, just return the predefined categories
-    // In the future, we could store and retrieve these from a database table
-    return defaultCategories;
+    try {
+      // Get all unique categories from posts
+      const postResult = await db.select({ categories: schema.posts.categories })
+        .from(schema.posts)
+        .where(sql`${schema.posts.categories} is not null`);
+      
+      const postCategories = postResult
+        .flatMap(post => post.categories || [])
+        .filter((category, index, self) => self.indexOf(category) === index);
+
+      // Combine with predefined categories and remove duplicates
+      return [...new Set([...schema.categories, ...postCategories])].sort();
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return schema.categories;
+    }
   }
 
   async addCategory(category: string): Promise<string[]> {
-    // Add the category to the list if it doesn't exist already
-    if (!defaultCategories.includes(category)) {
-      defaultCategories.push(category);
-      console.log(`New category "${category}" added. Updated categories:`, defaultCategories);
+    try {
+      if (!schema.categories.includes(category)) {
+        schema.categories.push(category);
+        schema.categories.sort();
+      }
+      return this.getAllCategories();
+    } catch (error) {
+      console.error('Error adding category:', error);
+      throw error;
     }
-    return defaultCategories;
   }
 
   async deleteCategory(category: string): Promise<string[]> {
-    // Find the index of the category
-    const index = defaultCategories.indexOf(category);
-    if (index !== -1) {
-      // Remove the category from the list
-      defaultCategories.splice(index, 1);
-      console.log(`Category "${category}" deleted. Updated categories:`, defaultCategories);
-    } else {
-      console.log(`Category "${category}" not found in default categories, but will still be removed from all posts.`);
+    try {
+      const index = schema.categories.indexOf(category);
+      if (index !== -1) {
+        schema.categories.splice(index, 1);
+      }
+      return this.getAllCategories();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      throw error;
     }
 
     // Always update all posts to remove this category, even if it wasn't in the default list
