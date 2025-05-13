@@ -42,9 +42,11 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
   // Fetch all categories
   const { data: availableCategories = [] } = useQuery<string[]>({
     queryKey: ['/api/categories'],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 30, // 30 minutes
     refetchOnWindowFocus: false,
     refetchInterval: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const deletePostMutation = useMutation({
