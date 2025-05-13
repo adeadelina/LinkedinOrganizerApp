@@ -69,11 +69,11 @@ export default function Home() {
     refetch: refetchCategories
   } = useQuery<string[]>({
     queryKey: ["/api/categories"],
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
     refetchInterval: false,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   });
 
   // Extract unique authors from posts
