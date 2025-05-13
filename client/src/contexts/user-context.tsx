@@ -23,8 +23,7 @@ interface UserContextType {
 interface RegisterData {
   username: string;
   password: string;
-  name?: string;
-  email?: string;
+  email: string;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
