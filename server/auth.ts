@@ -96,7 +96,7 @@ export function setupAuth(app: Express): void {
     // For Replit, we need to detect the current URL to support both development and production
     const protocol = "https";
     const host = process.env.REPL_SLUG ? 
-                 `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 
+                 `${process.env.REPL_SLUG}-00-38ws1v8gktjln.riker.replit.dev` : 
                  "localhost:5000";
     const callbackURL = `${protocol}://${host}/api/auth/google/callback`;
 
