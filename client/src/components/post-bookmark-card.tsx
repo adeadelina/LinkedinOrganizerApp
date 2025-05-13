@@ -485,13 +485,18 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                       // Add to new categories if not already in available categories
                       if (!availableCategories.includes(trimmedCategory)) {
                         setNewCategories(prev => [...prev, trimmedCategory]);
+                        // Update local state immediately
                         const updatedCategories = [...availableCategories, trimmedCategory].sort();
                         queryClient.setQueryData(['/api/categories'], updatedCategories);
-                        // Disable automatic background refetching
-                        queryClient.setQueryDefaults(['/api/categories'], {
-                          staleTime: Infinity,
-                          refetchOnWindowFocus: false,
-                          refetchOnMount: false
+                        
+                        // Make API call to persist the category
+                        fetch('/api/categories', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ category: trimmedCategory })
+                        }).then(() => {
+                          // Refetch categories after successful addition
+                          queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
                         });
                       }
                       // Add to selected categories if not already selected and under limit
