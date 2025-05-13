@@ -110,13 +110,24 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
       setIsCategoryDialogOpen(false);
       setNewCategories([]);
 
+      // Immediately invalidate and refetch
       queryClient.invalidateQueries({ 
         queryKey: ['/api/categories'],
-        refetchType: 'active',
+        refetchType: 'all',
       });
       queryClient.invalidateQueries({ 
         queryKey: ['/api/posts'],
-        refetchType: 'active',
+        refetchType: 'all',
+      });
+
+      // Force an immediate refetch
+      queryClient.refetchQueries({
+        queryKey: ['/api/categories'],
+        type: 'active',
+      });
+      queryClient.refetchQueries({
+        queryKey: ['/api/posts'],
+        type: 'active',
       });
 
       if (onRefetch) onRefetch();
