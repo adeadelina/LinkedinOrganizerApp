@@ -38,6 +38,8 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
   const [newCategory, setNewCategory] = useState("");
   const [newCategories, setNewCategories] = useState<string[]>([]);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const { 
     data: availableCategories = [], 
@@ -113,6 +115,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
       });
       setIsCategoryDialogOpen(false);
       setNewCategories([]);
+      setEditingCategory(null); // Clear editing category after successful update
 
       // Force immediate refetch of categories
       await queryClient.invalidateQueries({ 
@@ -165,6 +168,32 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
       return;
     }
     updateCategoriesMutation.mutate();
+  };
+
+  const handleCategoryRename = (oldCategory: string, newCategoryValue: string) => {
+    if (!newCategoryValue.trim() || newCategoryValue === oldCategory) {
+      setEditingCategory(null);
+      return;
+    }
+
+    // Optimistically update available categories
+    const updatedCategories = availableCategories.map(cat =>
+      cat === oldCategory ? newCategoryValue.trim() : cat
+    ).sort();
+
+    queryClient.setQueryData(['/api/categories'], updatedCategories);
+
+    // Update selected categories if the renamed category is selected
+    setSelectedCategories(prev =>
+      prev.map(cat => (cat === oldCategory ? newCategoryValue.trim() : cat))
+    );
+
+    // Set new category value in local state
+    setNewCategories(prev =>
+      prev.map(cat => (cat === oldCategory ? newCategoryValue.trim() : cat))
+    );
+
+    setEditingCategory(null);
   };
 
   const isProcessing = post.processingStatus === "processing";
@@ -436,21 +465,47 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {availableCategories.map((category) => (
-                <div key={category} className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={selectedCategories.includes(category)}
-                    onCheckedChange={() => handleCategoryChange(category)}
-                    id={`category-${category}`}
-                  />
-                  <label 
-                    htmlFor={`category-${category}`}
-                    className="text-sm cursor-pointer"
-                  >
-                    {category}
-                  </label>
-                </div>
-              ))}
+              {availableCategories.map((category) => {
+                  const isEditing = editingCategory === category;
+                  return (
+                    <div key={category} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={selectedCategories.includes(category)}
+                        onCheckedChange={() => handleCategoryChange(category)}
+                        id={`category-${category}`}
+                      />
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleCategoryRename(category, editValue);
+                            } else if (e.key === 'Escape') {
+                              setEditingCategory(null);
+                            }
+                          }}
+                          onBlur={() => handleCategoryRename(category, editValue)}
+                          className="flex-1 px-2 py-1 text-sm rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                          autoFocus
+                        />
+                      ) : (
+                        <label 
+                          htmlFor={`category-${category}`}
+                          className="text-sm cursor-pointer hover:text-primary"
+                          onDoubleClick={() => {
+                            setEditingCategory(category);
+                            setEditValue(category);
+                          }}
+                        >
+                          {category}
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
 
             <div className="mt-4">
