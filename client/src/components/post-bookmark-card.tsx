@@ -1,3 +1,7 @@
+The category addition logic in the post-bookmark-card.tsx component has been corrected to ensure new categories are properly added to the list.
+```
+
+```replit_final_file
 import React, { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { 
@@ -470,8 +474,14 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                         return;
                       }
 
-                      setNewCategories([...newCategories, newCategory.trim()]);
-                      setSelectedCategories([...selectedCategories, newCategory.trim()]);
+                      // Add to new categories if not already in available categories
+                      if (!availableCategories.includes(newCategory.trim())) {
+                        setNewCategories([...newCategories, newCategory.trim()]);
+                      }
+                      // Add to selected categories if not already selected
+                      if (!selectedCategories.includes(newCategory.trim())) {
+                        setSelectedCategories([...selectedCategories, newCategory.trim()]);
+                      }
                       setNewCategory('');
                     }
                   }}
