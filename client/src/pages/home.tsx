@@ -55,12 +55,11 @@ export default function Home() {
     refetch: refetchPosts 
   } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
-    staleTime: 1000, // Consider data stale after 1 second
-    refetchInterval: 3000, // Poll every 3 seconds
-    refetchIntervalInBackground: true,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: "always",
-    refetchOnReconnect: "always",
+    staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
+    refetchInterval: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Fetch all categories
@@ -70,12 +69,11 @@ export default function Home() {
     refetch: refetchCategories
   } = useQuery<string[]>({
     queryKey: ["/api/categories"],
-    staleTime: 0, // Always fetch fresh data
-    refetchInterval: 3000, // Aggressively poll every 3 seconds
-    refetchIntervalInBackground: true,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: "always", // Always refetch when window regains focus
-    refetchOnReconnect: "always"
+    staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
+    refetchInterval: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   });
 
   // Extract unique authors from posts
