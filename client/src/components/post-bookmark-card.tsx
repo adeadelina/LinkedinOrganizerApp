@@ -42,11 +42,8 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
   // Fetch all categories
   const { data: availableCategories = [] } = useQuery<string[]>({
     queryKey: ['/api/categories'],
-    staleTime: 1000 * 60 * 30, // 30 minutes
-    refetchOnWindowFocus: false,
-    refetchInterval: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const deletePostMutation = useMutation({
@@ -488,45 +485,9 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                       // Add to new categories if not already in available categories
                       if (!availableCategories.includes(trimmedCategory)) {
                         setNewCategories(prev => [...prev, trimmedCategory]);
-                        // Update local state immediately
+                        // Update available categories immediately
                         const updatedCategories = [...availableCategories, trimmedCategory].sort();
                         queryClient.setQueryData(['/api/categories'], updatedCategories);
-                        
-                        // Make API call to persist the category
-                        fetch('/api/categories', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ category: trimmedCategory })
-                        })
-                        .then(async response => {
-                          const data = await response.json();
-                          if (!response.ok) {
-                            throw new Error(data.message || 'Failed to add category');
-                          }
-                          return data;
-                        })
-                        .then(updatedCategories => {
-                          // Update cache with server response
-                          queryClient.setQueryData(['/api/categories'], updatedCategories);
-                          // Also invalidate to ensure fresh data
-                          queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-                          
-                          toast({
-                            title: "Category added",
-                            description: "New category was added successfully.",
-                          });
-                        })
-                        .catch(error => {
-                          console.error('Error adding category:', error);
-                          toast({
-                            title: "Error adding category",
-                            description: error.message || "Failed to add new category. Please try again.",
-                            variant: "destructive",
-                          });
-                          
-                          // Revert local changes on error
-                          queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-                        });
                       }
                       // Add to selected categories if not already selected and under limit
                       if (!selectedCategories.includes(trimmedCategory) && selectedCategories.length < MAX_CATEGORIES_PER_POST) {
