@@ -3,23 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 // User type matching the server-side Express.User
-export interface ReplitUser {
-  id: string;
-  name: string;
-  bio: string | null;
-  url: string | null;
-  profileImage: string | null;
-  roles: string[];
-  teams: string[];
-}
-
 export interface User {
   id: number;
   username: string;
   name?: string;
   email?: string;
   picture?: string;
-  replitId?: string;
 }
 
 interface UserContextType {

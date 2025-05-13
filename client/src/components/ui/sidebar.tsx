@@ -29,7 +29,7 @@ interface SidebarProps {
 const SidebarItem = ({ href, icon, label, count, active }: SidebarItemProps) => {
   return (
     <Link href={href}>
-      <a
+      <div
         className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
           active 
@@ -42,7 +42,7 @@ const SidebarItem = ({ href, icon, label, count, active }: SidebarItemProps) => 
         {count !== undefined && (
           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{count}</span>
         )}
-      </a>
+      </div>
     </Link>
   );
 };
@@ -62,7 +62,7 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
 
   return (
     <div className="bg-white w-60 min-h-screen border-r border-gray-100 py-4 flex flex-col">
-      
+
 
 
 
