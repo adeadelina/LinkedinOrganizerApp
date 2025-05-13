@@ -1,7 +1,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Switch, Route } from "wouter";
-import { Home } from "@/pages/home";
+import Home from "@/pages/home";
 import { Unread } from "@/pages/unread";
 import { Login } from "@/pages/login";
 import { Register } from "@/pages/register";
