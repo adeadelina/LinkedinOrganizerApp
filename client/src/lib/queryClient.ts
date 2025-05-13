@@ -47,7 +47,6 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: false,
       refetchOnMount: true,
-      refetchOnWindowFocus: true,
     },
     mutations: {
       retry: false,
