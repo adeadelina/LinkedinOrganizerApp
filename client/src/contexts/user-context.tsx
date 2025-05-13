@@ -75,16 +75,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const register = async (userData: RegisterData): Promise<User> => {
     try {
       setError(null);
-      const user = await apiRequest<User>('/api/auth/register', {
+      const response = await apiRequest<User>('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
       
+      if (!response || !response.id) {
+        throw new Error('Invalid response from server');
+      }
+
       // Update query cache with the user data
-      queryClient.setQueryData(['/api/auth/user'], user);
-      return user;
+      queryClient.setQueryData(['/api/auth/user'], response);
+      return response;
     } catch (error) {
+      console.error('Registration error:', error);
       setError(error instanceof Error ? error : new Error('Registration failed'));
       throw error;
     }

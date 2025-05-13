@@ -41,17 +41,27 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void }) {
   const onSubmit = async (values: RegisterFormValues) => {
     setLoading(true);
     try {
-      const user = await register(values);
-
-      toast({
-        title: "Registration successful",
-        description: `Welcome, ${user.username}! Your account has been created.`,
+      const user = await register({
+        username: values.username,
+        password: values.password,
+        email: values.email,
+        name: values.name || values.username
       });
 
-      if (onSuccess) {
-        onSuccess();
+      if (user) {
+        toast({
+          title: "Registration successful",
+          description: `Welcome, ${user.username}! Your account has been created.`,
+        });
+
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        throw new Error("Registration failed - no user returned");
       }
     } catch (error) {
+      console.error("Registration error:", error);
       toast({
         variant: "destructive",
         title: "Registration failed",
