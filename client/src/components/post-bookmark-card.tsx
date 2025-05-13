@@ -34,13 +34,6 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
   const { toast } = useToast();
   const [isFullPostDialogOpen, setIsFullPostDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  
-  // Reset selected categories when dialog opens
-  useEffect(() => {
-    if (isCategoryDialogOpen) {
-      setSelectedCategories(post.categories || []);
-    }
-  }, [isCategoryDialogOpen, post.categories]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post.categories || []);
   const [newCategory, setNewCategory] = useState("");
@@ -369,30 +362,8 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                 )}
                 </div>
 
-                {/* Categories */}
-                {post.categories && post.categories.length > 0 && (
-                  <div className="mt-2">
-                    <div className="overflow-x-auto pb-1">
-                      <div className="flex flex-wrap gap-1">
-                        {post.categories.slice(0, 3).map(category => (
-                          <CategoryFilter
-                            key={category}
-                            category={category}
-                            onClick={(e?: React.MouseEvent) => {
-                              if (e) e.stopPropagation();
-                            }}
-                            className="text-xs"
-                          />
-                        ))}
-                        {post.categories.length > 3 && (
-                          <span className="text-xs text-gray-500 py-1">
-                            +{post.categories.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Categories hidden but functionality maintained */}
+                <div className="mt-2"></div>
 
                 {/* URL */}
 
@@ -450,17 +421,8 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                   <p className="text-sm text-gray-700">{post.summary}</p>
                 </div>
             )}
-            {post.categories && post.categories.length > 0 && (
-              <div className="mt-6 flex flex-wrap gap-1">
-                {post.categories.map(category => (
-                  <CategoryFilter
-                    key={category}
-                    category={category}
-                    onClick={() => {}}
-                  />
-                ))}
-              </div>
-            )}
+            {/* Categories hidden in dialog but functionality maintained */}
+            <div className="mt-6"></div>
           </div>
         </DialogContent>
       </Dialog>
