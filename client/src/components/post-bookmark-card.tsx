@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { 
   Star, MoreHorizontal, ExternalLink, Trash2, Pencil, Tag, 
@@ -362,8 +362,25 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                 )}
                 </div>
 
-                {/* Categories hidden but functionality maintained */}
-                <div className="mt-2"></div>
+                {/* Categories */}
+                {post.categories && post.categories.length > 0 && (
+                  <div className="mt-2">
+                    <div className="overflow-x-auto pb-1">
+                      <div className="flex flex-wrap gap-1">
+                        {post.categories.map(category => (
+                          <CategoryFilter
+                            key={category}
+                            category={category}
+                            onClick={(e?: React.MouseEvent) => {
+                              if (e) e.stopPropagation();
+                            }}
+                            className="text-xs"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* URL */}
 
