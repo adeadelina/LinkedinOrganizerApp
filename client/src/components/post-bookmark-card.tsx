@@ -470,8 +470,15 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                         return;
                       }
 
-                      setNewCategories([...newCategories, newCategory.trim()]);
-                      setSelectedCategories([...selectedCategories, newCategory.trim()]);
+                      const trimmedCategory = newCategory.trim();
+                      // Add to new categories if not already in available categories
+                      if (!availableCategories.includes(trimmedCategory)) {
+                        setNewCategories(prev => [...prev, trimmedCategory]);
+                      }
+                      // Add to selected categories if not already selected and under limit
+                      if (!selectedCategories.includes(trimmedCategory) && selectedCategories.length < MAX_CATEGORIES_PER_POST) {
+                        setSelectedCategories(prev => [...prev, trimmedCategory]);
+                      }
                       setNewCategory('');
                     }
                   }}
