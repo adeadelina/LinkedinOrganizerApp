@@ -6,6 +6,44 @@ import { compare, hash } from "bcryptjs";
 import { Express, Request, Response, NextFunction } from "express";
 import { User } from "@shared/schema";
 
+// Add Replit user info to the request
+interface ReplitAuthRequest extends Request {
+  replit?: {
+    id: string;
+    name: string;
+    bio: string | null;
+    url: string | null;
+    profileImage: string | null;
+    roles: string[];
+    teams: string[];
+  }
+}
+
+// Replit Auth middleware
+function replitAuth(req: ReplitAuthRequest, res: Response, next: NextFunction) {
+  const userId = req.headers["x-replit-user-id"];
+  const userName = req.headers["x-replit-user-name"];
+  const profileImage = req.headers["x-replit-user-profile-image"];
+  const bio = req.headers["x-replit-user-bio"];
+  const url = req.headers["x-replit-user-url"];
+  const roles = req.headers["x-replit-user-roles"];
+  const teams = req.headers["x-replit-user-teams"];
+
+  if (userId && userName) {
+    req.replit = {
+      id: userId as string,
+      name: userName as string,
+      bio: bio as string | null,
+      url: url as string | null,
+      profileImage: profileImage as string | null,
+      roles: roles ? (roles as string).split(',') : [],
+      teams: teams ? (teams as string).split(',') : []
+    };
+  }
+  
+  next();
+}
+
 // Define user session type
 declare global {
   namespace Express {
@@ -168,6 +206,16 @@ export function setupAuth(app: Express): void {
   // Initialize Passport and restore authentication state from session
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(replitAuth);
+  
+  // Add Replit Auth endpoint
+  app.get("/__repl_auth_user", (req: ReplitAuthRequest, res) => {
+    if (req.replit) {
+      res.json(req.replit);
+    } else {
+      res.status(401).json({ error: "Not authenticated with Replit" });
+    }
+  });
 }
 
 // User authentication check middleware
