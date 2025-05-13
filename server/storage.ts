@@ -9,7 +9,7 @@ export interface IStorage {
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(user: Partial<InsertUser>): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
-  
+
   // Post operations
   getAllPosts(): Promise<Post[]>;
   getPostById(id: number): Promise<Post | undefined>;
@@ -17,7 +17,7 @@ export interface IStorage {
   createPost(post: InsertPost): Promise<Post>;
   updatePost(id: number, post: Partial<InsertPost>): Promise<Post | undefined>;
   deletePost(id: number): Promise<boolean>;
-  
+
   // Categories operations
   getAllCategories(): Promise<string[]>;
   addCategory(category: string): Promise<string[]>;
@@ -90,7 +90,7 @@ export class MemStorage implements IStorage {
       googleId: userData.googleId !== undefined ? userData.googleId : user.googleId,
       picture: userData.picture !== undefined ? userData.picture : user.picture,
     };
-    
+
     this.users.set(id, updatedUser);
     return updatedUser;
   }
@@ -123,7 +123,7 @@ export class MemStorage implements IStorage {
   async createPost(insertPost: InsertPost): Promise<Post> {
     const id = this.postCurrentId++;
     const createdAt = new Date();
-    
+
     // Create a properly typed Post object with defaults for nullable fields
     const post: Post = {
       id,
@@ -140,7 +140,7 @@ export class MemStorage implements IStorage {
       processingStatus: insertPost.processingStatus || "processing",
       createdAt
     };
-    
+
     this.posts.set(id, post);
     return post;
   }
@@ -164,7 +164,7 @@ export class MemStorage implements IStorage {
       processError: postUpdate.processError !== undefined ? postUpdate.processError : post.processError,
       processingStatus: postUpdate.processingStatus !== undefined ? postUpdate.processingStatus : post.processingStatus
     };
-    
+
     this.posts.set(id, updatedPost);
     return updatedPost;
   }
@@ -175,17 +175,25 @@ export class MemStorage implements IStorage {
 
   // Categories operations
   async getAllCategories(): Promise<string[]> {
-    return categories;
+    // Get all unique categories from posts
+    const postCategories = Array.from(this.posts.values())
+      .flatMap(post => post.categories || [])
+      .filter((category, index, self) => self.indexOf(category) === index);
+
+    // Combine with predefined categories and remove duplicates
+    const allCategories = [...new Set([...categories, ...postCategories])];
+    return allCategories.sort();
   }
-  
+
   async addCategory(category: string): Promise<string[]> {
-    // Don't add if it already exists (case insensitive check)
     if (!categories.some(c => c.toLowerCase() === category.toLowerCase())) {
       categories.push(category);
+      // Sort categories alphabetically
+      categories.sort();
     }
-    return categories;
+    return this.getAllCategories();
   }
-  
+
   async deleteCategory(category: string): Promise<string[]> {
     // Find the index of the category (case-sensitive)
     const index = categories.indexOf(category);
@@ -196,7 +204,7 @@ export class MemStorage implements IStorage {
     } else {
       console.log(`Category "${category}" not found in default categories, but will still be removed from all posts.`);
     }
-    
+
     // Always update all posts to remove this category, even if it wasn't in the official list
     // This handles edge cases like test categories or categories that were removed from the default list
     Array.from(this.posts.values()).forEach(post => {
@@ -205,7 +213,7 @@ export class MemStorage implements IStorage {
         console.log(`Removed category "${category}" from post ${post.id}`);
       }
     });
-    
+
     return categories;
   }
 }
