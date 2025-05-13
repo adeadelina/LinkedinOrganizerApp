@@ -12,7 +12,7 @@ import { useUser } from "@/contexts/user-context";
 
 // Form validation schema
 const loginSchema = z.object({
-  username: z.string().min(1, "Username or email is required"),
+  username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -116,7 +116,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
                 <FormItem>
                   <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your username or email" {...field} />
+                    <Input placeholder="Enter your username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

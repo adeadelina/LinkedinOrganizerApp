@@ -1,4 +1,3 @@
-
 import { useLocation } from "wouter";
 import { LoginForm } from "@/components/auth/login-form";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,6 +6,7 @@ export default function Login() {
   const [_, setLocation] = useLocation();
 
   const handleLoginSuccess = () => {
+    // Redirect to home page after successful login
     setLocation("/");
   };
 
@@ -16,7 +16,7 @@ export default function Login() {
         <div className="flex flex-col space-y-2 text-center mb-4">
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
           <p className="text-sm text-muted-foreground">
-            Log in to your account to continue
+            Enter your credentials to continue to your account
           </p>
         </div>
         <LoginForm onSuccess={handleLoginSuccess} />
