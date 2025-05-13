@@ -495,25 +495,34 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ category: trimmedCategory })
                         })
-                        .then(response => {
+                        .then(async response => {
+                          const data = await response.json();
                           if (!response.ok) {
-                            throw new Error('Failed to add category');
+                            throw new Error(data.message || 'Failed to add category');
                           }
-                          return response.json();
+                          return data;
                         })
                         .then(updatedCategories => {
                           // Update cache with server response
                           queryClient.setQueryData(['/api/categories'], updatedCategories);
                           // Also invalidate to ensure fresh data
                           queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+                          
+                          toast({
+                            title: "Category added",
+                            description: "New category was added successfully.",
+                          });
                         })
                         .catch(error => {
                           console.error('Error adding category:', error);
                           toast({
                             title: "Error adding category",
-                            description: "Failed to add new category. Please try again.",
+                            description: error.message || "Failed to add new category. Please try again.",
                             variant: "destructive",
                           });
+                          
+                          // Revert local changes on error
+                          queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
                         });
                       }
                       // Add to selected categories if not already selected and under limit
