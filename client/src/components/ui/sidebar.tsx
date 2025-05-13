@@ -47,7 +47,7 @@ const SidebarItem = ({ href, icon, label, count, active }: SidebarItemProps) => 
   );
 };
 
-export function Sidebar({ data: categories = [], selectedCategories = [], onCategoryChange, onSearch, posts = [] }: SidebarProps) {
+export function Sidebar({ categories = [], selectedCategories = [], onCategoryChange, onSearch, posts = [] }: SidebarProps) {
   const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchMode, setSearchMode] = useState<"all" | "keyword" | "author">("all");
