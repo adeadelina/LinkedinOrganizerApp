@@ -39,11 +39,15 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
   const [newCategory, setNewCategory] = useState("");
   const [newCategories, setNewCategories] = useState<string[]>([]);
 
-  // Fetch all categories
-  const { data: availableCategories = [] } = useQuery<string[]>({
+  const { 
+    data: availableCategories = [], 
+    refetch: refetchAvailableCategories
+  } = useQuery<string[]>({
     queryKey: ['/api/categories'],
     staleTime: 0,
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   const deletePostMutation = useMutation({
@@ -102,7 +106,7 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
         }
       );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Categories updated",
         description: "The post categories have been successfully updated.",
@@ -110,25 +114,16 @@ export function PostBookmarkCard({ post, onRefetch, isSelected, onSelect, classN
       setIsCategoryDialogOpen(false);
       setNewCategories([]);
 
-      // Immediately invalidate and refetch
-      queryClient.invalidateQueries({ 
+      // Force immediate refetch of categories
+      await queryClient.invalidateQueries({ 
         queryKey: ['/api/categories'],
-        refetchType: 'all',
       });
-      queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({ 
         queryKey: ['/api/posts'],
-        refetchType: 'all',
       });
 
-      // Force an immediate refetch
-      queryClient.refetchQueries({
-        queryKey: ['/api/categories'],
-        type: 'active',
-      });
-      queryClient.refetchQueries({
-        queryKey: ['/api/posts'],
-        type: 'active',
-      });
+      // Ensure categories are refreshed
+      await refetchAvailableCategories();
 
       if (onRefetch) onRefetch();
     },
