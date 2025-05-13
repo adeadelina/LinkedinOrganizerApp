@@ -47,12 +47,17 @@ const SidebarItem = ({ href, icon, label, count, active }: SidebarItemProps) => 
   );
 };
 
-export function Sidebar({ categories = [], selectedCategories = [], onCategoryChange, onSearch, posts = [] }: SidebarProps) {
+export function Sidebar({ data: categories = [], selectedCategories = [], onCategoryChange, onSearch, posts = [] }: SidebarProps) {
   const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchMode, setSearchMode] = useState<"all" | "keyword" | "author">("all");
   const [showFilters, setShowFilters] = useState(true);
   const [showCategories, setShowCategories] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState("");
+
+  const filteredCategories = categories.filter(category => 
+    category.toLowerCase().includes(categoryFilter.toLowerCase())
+  );
 
   const handleSearch = () => {
     if (onSearch) {
@@ -117,7 +122,14 @@ export function Sidebar({ categories = [], selectedCategories = [], onCategoryCh
 
         {showCategories && categories.length > 0 && (
           <div className="px-4 py-2 space-y-2 max-h-64 overflow-y-auto">
-            {categories.map(category => (
+             <Input
+              type="text"
+              placeholder="Filter categories..."
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="mb-2"
+            />
+            {filteredCategories.map(category => (
               <div 
                 key={category}
                 className="flex items-center justify-between text-sm"
