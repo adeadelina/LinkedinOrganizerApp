@@ -62,7 +62,7 @@ export class DbStorage implements IStorage {
       .insert(users)
       .values({
         username: userData.username,
-        passwordHash: userData.passwordHash || null,
+        password_hash: userData.password_hash || null,
         name: userData.name || null,
         email: userData.email || null,
         googleId: userData.googleId || null,
@@ -86,8 +86,8 @@ export class DbStorage implements IStorage {
     const updates: Record<string, any> = {};
 
     if (userData.username !== undefined) updates.username = userData.username;
-    if (userData.passwordHash !== undefined)
-      updates.passwordHash = userData.passwordHash;
+    if (userData.password_hash !== undefined)
+      updates.password_hash = userData.password_hash;
     if (userData.name !== undefined) updates.name = userData.name;
     if (userData.email !== undefined) updates.email = userData.email;
     if (userData.googleId !== undefined) updates.googleId = userData.googleId;

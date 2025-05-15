@@ -1,11 +1,19 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  jsonb,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  password_hash: text("password_hash").notNull(),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   googleId: text("google_id").unique(),
@@ -13,7 +21,7 @@ export const users = pgTable("users", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
-  passwordHash: true,
+  password_hash: true,
   name: true,
   email: true,
   googleId: true,
@@ -37,7 +45,7 @@ export let categories = [
   "Sales",
   "Acquisition",
   "SEO",
-  "Acquisition plays"
+  "Acquisition plays",
 ];
 
 // Maximum categories a post can have
@@ -75,16 +83,21 @@ export const insertPostSchema = createInsertSchema(posts).pick({
 });
 
 export const contentUrlSchema = z.object({
-  url: z.string().url().refine(
-    (url) => {
-      return url.startsWith("https://www.linkedin.com/") || 
-             url.includes("substack.com/") || 
-             url.includes(".substack.com/");
-    }, 
-    {
-      message: "Must be a valid LinkedIn or Substack URL"
-    }
-  )
+  url: z
+    .string()
+    .url()
+    .refine(
+      (url) => {
+        return (
+          url.startsWith("https://www.linkedin.com/") ||
+          url.includes("substack.com/") ||
+          url.includes(".substack.com/")
+        );
+      },
+      {
+        message: "Must be a valid LinkedIn or Substack URL",
+      },
+    ),
 });
 
 export type InsertPost = z.infer<typeof insertPostSchema>;

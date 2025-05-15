@@ -33,26 +33,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     const { username, password, name, email } = req.body;
 
+    console.log("Received registration request with data:", req.body);
+
     if (!username || !password || !email || !name) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    console.log("All fields present in the formulaire");
 
     const existingUser = findUserByUsernameOrEmail(username);
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const hashedPassword = await hashPassword(password);
-    console.log("Hashed password:", hashedPassword);  // This must print a long string, NOT null/undefined
-    
+    const password_hash = await hashPassword(password);
+    console.log("Hashed password:", password_hash); // This must print a long string, NOT null/undefined
+
     const user = await createUser({
       username,
       name,
       email,
-      password: hashedPassword,
+      password_hash,
     });
-
-    
 
     req.session.user = user;
     res.json({ id: user.id, username: user.username, email: user.email });
@@ -84,7 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   // Get all posts
-  
+
   app.get("/api/posts", async (req: Request, res: Response) => {
     try {
       const posts = await storage.getAllPosts();
@@ -381,12 +383,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Only proceed if it's a LinkedIn post
         if (!post.url.includes("linkedin.com")) {
-          return res
-            .status(400)
-            .json({
-              error:
-                "Only LinkedIn posts are supported for author re-extraction",
-            });
+          return res.status(400).json({
+            error: "Only LinkedIn posts are supported for author re-extraction",
+          });
         }
 
         try {
@@ -603,7 +602,7 @@ async function processContentPost(postId: number, url: string): Promise<void> {
       });
 
       console.log(
-        `[Post ${postId}] Successfully extracted content (${extractedInfo.content.length} characters)${extractedInfo.postImage ? ', with post image: ' + extractedInfo.postImage : ', no post image found'}`,
+        `[Post ${postId}] Successfully extracted content (${extractedInfo.content.length} characters)${extractedInfo.postImage ? ", with post image: " + extractedInfo.postImage : ", no post image found"}`,
       );
     } catch (extractError: any) {
       console.error(`[Post ${postId}] Extraction error:`, extractError);

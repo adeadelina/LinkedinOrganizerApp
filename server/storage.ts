@@ -1,4 +1,10 @@
-import { categories, type User, type InsertUser, type Post, type InsertPost } from "@shared/schema";
+import {
+  categories,
+  type User,
+  type InsertUser,
+  type Post,
+  type InsertPost,
+} from "@shared/schema";
 
 // Storage interface for CRUD operations
 export interface IStorage {
@@ -49,9 +55,7 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
+    return Array.from(this.users.values()).find((user) => user.email === email);
   }
 
   async getUserByGoogleId(googleId: string): Promise<User | undefined> {
@@ -66,7 +70,7 @@ export class MemStorage implements IStorage {
     const user: User = {
       id,
       username: userData.username || `user_${id}`,
-      passwordHash: userData.passwordHash || null,
+      password_hash: userData.password_hash || null,
       name: userData.name || null,
       email: userData.email || null,
       googleId: userData.googleId || null,
@@ -77,17 +81,25 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+  async updateUser(
+    id: number,
+    userData: Partial<InsertUser>,
+  ): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
 
     const updatedUser: User = {
       ...user,
-      username: userData.username !== undefined ? userData.username : user.username,
-      passwordHash: userData.passwordHash !== undefined ? userData.passwordHash : user.passwordHash,
+      username:
+        userData.username !== undefined ? userData.username : user.username,
+      password_hash:
+        userData.password_hash !== undefined
+          ? userData.password_hash
+          : user.password_hash,
       name: userData.name !== undefined ? userData.name : user.name,
       email: userData.email !== undefined ? userData.email : user.email,
-      googleId: userData.googleId !== undefined ? userData.googleId : user.googleId,
+      googleId:
+        userData.googleId !== undefined ? userData.googleId : user.googleId,
       picture: userData.picture !== undefined ? userData.picture : user.picture,
     };
 
@@ -111,7 +123,7 @@ export class MemStorage implements IStorage {
 
   async getPostsByCategory(category: string): Promise<Post[]> {
     return Array.from(this.posts.values())
-      .filter(post => post.categories?.includes(category))
+      .filter((post) => post.categories?.includes(category))
       .sort((a, b) => {
         if (!a.createdAt && !b.createdAt) return 0;
         if (!a.createdAt) return 1;
@@ -138,14 +150,17 @@ export class MemStorage implements IStorage {
       confidence: insertPost.confidence || null,
       processError: insertPost.processError || null,
       processingStatus: insertPost.processingStatus || "processing",
-      createdAt
+      createdAt,
     };
 
     this.posts.set(id, post);
     return post;
   }
 
-  async updatePost(id: number, postUpdate: Partial<InsertPost>): Promise<Post | undefined> {
+  async updatePost(
+    id: number,
+    postUpdate: Partial<InsertPost>,
+  ): Promise<Post | undefined> {
     const post = this.posts.get(id);
     if (!post) return undefined;
 
@@ -153,16 +168,42 @@ export class MemStorage implements IStorage {
     const updatedPost: Post = {
       ...post,
       // Only update fields that are provided in postUpdate
-      authorName: postUpdate.authorName !== undefined ? postUpdate.authorName : post.authorName,
-      authorImage: postUpdate.authorImage !== undefined ? postUpdate.authorImage : post.authorImage,
-      content: postUpdate.content !== undefined ? postUpdate.content : post.content,
-      postImage: postUpdate.postImage !== undefined ? postUpdate.postImage : post.postImage,
-      publishedDate: postUpdate.publishedDate !== undefined ? postUpdate.publishedDate : post.publishedDate,
-      categories: postUpdate.categories !== undefined ? postUpdate.categories : post.categories,
-      summary: postUpdate.summary !== undefined ? postUpdate.summary : post.summary,
-      confidence: postUpdate.confidence !== undefined ? postUpdate.confidence : post.confidence,
-      processError: postUpdate.processError !== undefined ? postUpdate.processError : post.processError,
-      processingStatus: postUpdate.processingStatus !== undefined ? postUpdate.processingStatus : post.processingStatus
+      authorName:
+        postUpdate.authorName !== undefined
+          ? postUpdate.authorName
+          : post.authorName,
+      authorImage:
+        postUpdate.authorImage !== undefined
+          ? postUpdate.authorImage
+          : post.authorImage,
+      content:
+        postUpdate.content !== undefined ? postUpdate.content : post.content,
+      postImage:
+        postUpdate.postImage !== undefined
+          ? postUpdate.postImage
+          : post.postImage,
+      publishedDate:
+        postUpdate.publishedDate !== undefined
+          ? postUpdate.publishedDate
+          : post.publishedDate,
+      categories:
+        postUpdate.categories !== undefined
+          ? postUpdate.categories
+          : post.categories,
+      summary:
+        postUpdate.summary !== undefined ? postUpdate.summary : post.summary,
+      confidence:
+        postUpdate.confidence !== undefined
+          ? postUpdate.confidence
+          : post.confidence,
+      processError:
+        postUpdate.processError !== undefined
+          ? postUpdate.processError
+          : post.processError,
+      processingStatus:
+        postUpdate.processingStatus !== undefined
+          ? postUpdate.processingStatus
+          : post.processingStatus,
     };
 
     this.posts.set(id, updatedPost);
@@ -177,7 +218,7 @@ export class MemStorage implements IStorage {
   async getAllCategories(): Promise<string[]> {
     // Get all unique categories from posts
     const postCategories = Array.from(this.posts.values())
-      .flatMap(post => post.categories || [])
+      .flatMap((post) => post.categories || [])
       .filter((category, index, self) => self.indexOf(category) === index);
 
     // Combine with predefined categories and remove duplicates
@@ -193,7 +234,7 @@ export class MemStorage implements IStorage {
       // Sort categories alphabetically
       categories.sort();
     }
-    
+
     // Return all categories including the new one
     return Promise.resolve([...categories]);
   }
@@ -204,14 +245,19 @@ export class MemStorage implements IStorage {
     if (index !== -1) {
       // Remove the category
       categories.splice(index, 1);
-      console.log(`Category "${category}" deleted. Updated categories:`, categories);
+      console.log(
+        `Category "${category}" deleted. Updated categories:`,
+        categories,
+      );
     } else {
-      console.log(`Category "${category}" not found in default categories, but will still be removed from all posts.`);
+      console.log(
+        `Category "${category}" not found in default categories, but will still be removed from all posts.`,
+      );
     }
 
     // Always update all posts to remove this category, even if it wasn't in the official list
     // This handles edge cases like test categories or categories that were removed from the default list
-    Array.from(this.posts.values()).forEach(post => {
+    Array.from(this.posts.values()).forEach((post) => {
       if (post.categories && post.categories.includes(category)) {
         post.categories = post.categories.filter((c: string) => c !== category);
         console.log(`Removed category "${category}" from post ${post.id}`);
@@ -227,6 +273,6 @@ import { DbStorage } from "./db-storage";
 
 // Choose which storage implementation to use
 // We'll use the database implementation by default
-export const storage = process.env.DATABASE_URL 
-  ? new DbStorage() 
+export const storage = process.env.DATABASE_URL
+  ? new DbStorage()
   : new MemStorage();

@@ -1,4 +1,3 @@
-
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../shared/schema";
@@ -11,7 +10,7 @@ if (!process.env.DATABASE_URL) {
 const queryClient = postgres(process.env.DATABASE_URL, {
   max: 10,
   idle_timeout: 20,
-  connect_timeout: 10
+  connect_timeout: 10,
 });
 
 // Create a Drizzle instance
@@ -46,7 +45,7 @@ export async function createUser({
       picture,
     })
     .returning();
-  console.log("createUser received password:", password);  // Should be the hash string here
+  console.log("createUser received password:", password_hash); // Should be the hash string here
   return result[0];
 }
 
@@ -59,8 +58,8 @@ export async function findUserByUsernameOrEmail(identifier: string) {
       or(
         eq(schema.users.username, identifier),
         eq(schema.users.email, identifier),
-        eq(schema.users.google_id, identifier)
-      )
+        eq(schema.users.google_id, identifier),
+      ),
     );
 
   return result[0] || null;
