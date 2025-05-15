@@ -1,13 +1,13 @@
 import { db } from "./database";
 import { IStorage } from "./storage";
-import { 
-  InsertPost, 
-  InsertUser, 
-  Post, 
-  User, 
+import {
+  InsertPost,
+  InsertUser,
+  Post,
+  User,
   categories as defaultCategories,
   posts,
-  users
+  users,
 } from "../shared/schema";
 import { eq, sql, desc, asc } from "drizzle-orm";
 
@@ -28,7 +28,10 @@ export class DbStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username));
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     return result[0];
   }
 
@@ -38,7 +41,10 @@ export class DbStorage implements IStorage {
   }
 
   async getUserByGoogleId(googleId: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.googleId, googleId));
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.googleId, googleId));
     return result[0];
   }
 
@@ -52,20 +58,26 @@ export class DbStorage implements IStorage {
     const createdAt = new Date();
 
     // Create the user with the proper shape required by Drizzle
-    const result = await db.insert(users).values({
-      username: userData.username,
-      password: userData.password || null,
-      name: userData.name || null,
-      email: userData.email || null,
-      googleId: userData.googleId || null,
-      picture: userData.picture || null,
-      createdAt
-    }).returning();
+    const result = await db
+      .insert(users)
+      .values({
+        username: userData.username,
+        passwordHash: userData.passwordHash || null,
+        name: userData.name || null,
+        email: userData.email || null,
+        googleId: userData.googleId || null,
+        picture: userData.picture || null,
+        createdAt,
+      })
+      .returning();
 
     return result[0];
   }
 
-  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+  async updateUser(
+    id: number,
+    userData: Partial<InsertUser>,
+  ): Promise<User | undefined> {
     // First get the existing user
     const existingUser = await this.getUser(id);
     if (!existingUser) return undefined;
@@ -74,7 +86,8 @@ export class DbStorage implements IStorage {
     const updates: Record<string, any> = {};
 
     if (userData.username !== undefined) updates.username = userData.username;
-    if (userData.password !== undefined) updates.password = userData.password;
+    if (userData.passwordHash !== undefined)
+      updates.passwordHash = userData.passwordHash;
     if (userData.name !== undefined) updates.name = userData.name;
     if (userData.email !== undefined) updates.email = userData.email;
     if (userData.googleId !== undefined) updates.googleId = userData.googleId;
@@ -96,7 +109,10 @@ export class DbStorage implements IStorage {
 
   async getAllPosts(): Promise<Post[]> {
     try {
-      const result = await db.select().from(posts).orderBy(desc(posts.createdAt));
+      const result = await db
+        .select()
+        .from(posts)
+        .orderBy(desc(posts.createdAt));
       return result;
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -112,7 +128,8 @@ export class DbStorage implements IStorage {
   async getPostsByCategory(category: string): Promise<Post[]> {
     // Query posts where the category exists in the categories array
     // This uses PostgreSQL's array contains operator (@>)
-    const result = await db.select()
+    const result = await db
+      .select()
       .from(posts)
       .where(sql`${posts.categories} @> ARRAY[${category}]::text[]`)
       .orderBy(desc(posts.createdAt));
@@ -125,7 +142,10 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updatePost(id: number, postUpdate: Partial<InsertPost>): Promise<Post | undefined> {
+  async updatePost(
+    id: number,
+    postUpdate: Partial<InsertPost>,
+  ): Promise<Post | undefined> {
     const result = await db
       .update(posts)
       .set(postUpdate)
@@ -154,7 +174,10 @@ export class DbStorage implements IStorage {
     // Add the category to the list if it doesn't exist already
     if (!defaultCategories.includes(category)) {
       defaultCategories.push(category);
-      console.log(`New category "${category}" added. Updated categories:`, defaultCategories);
+      console.log(
+        `New category "${category}" added. Updated categories:`,
+        defaultCategories,
+      );
     }
     return defaultCategories;
   }
@@ -165,9 +188,14 @@ export class DbStorage implements IStorage {
     if (index !== -1) {
       // Remove the category from the list
       defaultCategories.splice(index, 1);
-      console.log(`Category "${category}" deleted. Updated categories:`, defaultCategories);
+      console.log(
+        `Category "${category}" deleted. Updated categories:`,
+        defaultCategories,
+      );
     } else {
-      console.log(`Category "${category}" not found in default categories, but will still be removed from all posts.`);
+      console.log(
+        `Category "${category}" not found in default categories, but will still be removed from all posts.`,
+      );
     }
 
     // Always update all posts to remove this category, even if it wasn't in the default list
@@ -176,7 +204,7 @@ export class DbStorage implements IStorage {
     for (const post of allPosts) {
       if (post.categories && post.categories.includes(category)) {
         // Remove the category from the post
-        const updatedCategories = post.categories.filter(c => c !== category);
+        const updatedCategories = post.categories.filter((c) => c !== category);
         await this.updatePost(post.id, { categories: updatedCategories });
         console.log(`Removed category "${category}" from post ${post.id}`);
       }

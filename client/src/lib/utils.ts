@@ -15,8 +15,10 @@ export function formatRelativeTime(date: Date | string | number) {
   const diffDays = Math.round(diffHours / 24);
 
   if (diffSecs < 60) return "just now";
-  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+  if (diffMins < 60)
+    return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
+  if (diffHours < 24)
+    return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
 
   return then.toLocaleDateString("en-US", {
@@ -36,12 +38,26 @@ export function isValidLinkedInUrl(url: string) {
 }
 
 export function debounce<T extends (...args: any[]) => any>(
-  fn: T, 
-  delay: number
+  fn: T,
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout>;
-  return function(...args: Parameters<T>) {
+  return function (...args: Parameters<T>) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };
+}
+import bcrypt from "bcryptjs";
+
+// Hash the password before saving
+export async function hashPassword(password: string): Promise<string> {
+  return await bcrypt.hash(password, 10);
+}
+
+// Compare plaintext password to hashed one
+export async function verifyPassword(
+  password: string,
+  hashedPassword: string,
+): Promise<boolean> {
+  return await bcrypt.compare(password, hashedPassword);
 }

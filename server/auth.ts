@@ -67,12 +67,12 @@ export function setupAuth(app: Express): void {
           }
 
           // Password validation (only for local accounts)
-          if (!user.password) {
+          if (!user.password_hash) {
             return done(null, false, { message: "This account requires OAuth login" });
           }
 
           // Verify password
-          const isValid = await compare(password, user.password);
+          const isValid = await compare(password, user.password_hash);
           if (!isValid) {
             return done(null, false, { message: "Incorrect password" });
           }
@@ -136,7 +136,7 @@ export function setupAuth(app: Express): void {
               user = await storage.createUser({
                 username,
                 name: profile.displayName,
-                email: email,
+                email,
                 googleId: profile.id,
                 picture: profile.photos?.[0]?.value,
               });
@@ -222,9 +222,9 @@ export function registerAuthRoutes(app: Express): void {
       // Create the user
       const user = await storage.createUser({
         username,
-        passwordHash: hashedPassword,
         name: name || username,
         email,
+        password_hash: hashedPassword,
       });
 
       if (!user || !user.id) {

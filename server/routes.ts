@@ -1,4 +1,6 @@
 import type { Express, Request, Response } from "express";
+import { findUserByUsernameOrEmail, createUser } from "./database";
+import { hashPassword, verifyPassword } from "../client/src/lib/utils";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { ZodError } from "zod";
@@ -19,7 +21,70 @@ import { isAuthenticated } from "./auth";
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes - all prefixed with /api
 
+  // ---------------------------
+  // Authentication Routes
+  // ---------------------------
+  // These routes handle user signup, login, logout, and session validation.
+  // They rely on session-based authentication using express-session.
+  // - POST /api/auth/register → create a new user account
+  // - POST /api/auth/login → log in and store user in session
+  // - GET /api/auth/user → return current logged-in user (if authenticated)
+  // - POST /api/auth/logout → destroy the session and log out
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    const { username, password, name, email } = req.body;
+
+    if (!username || !password || !email || !name) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const existingUser = findUserByUsernameOrEmail(username);
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await hashPassword(password);
+    console.log("Hashed password:", hashedPassword);  // This must print a long string, NOT null/undefined
+    
+    const user = await createUser({
+      username,
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    
+
+    req.session.user = user;
+    res.json({ id: user.id, username: user.username, email: user.email });
+  });
+
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    const user = findUserByUsernameOrEmail(username);
+
+    if (!user || !(await verifyPassword(password, user.password))) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    req.session.user = user;
+    res.json({ id: user.id, username: user.username, email: user.email });
+  });
+
+  app.get("/api/auth/user", (req: Request, res: Response) => {
+    if (!req.session.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    res.json(req.session.user);
+  });
+
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    req.session.destroy(() => {
+      res.json({ message: "Logged out" });
+    });
+  });
   // Get all posts
+  
   app.get("/api/posts", async (req: Request, res: Response) => {
     try {
       const posts = await storage.getAllPosts();

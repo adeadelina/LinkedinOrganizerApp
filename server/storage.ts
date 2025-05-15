@@ -66,7 +66,7 @@ export class MemStorage implements IStorage {
     const user: User = {
       id,
       username: userData.username || `user_${id}`,
-      password: userData.password || null,
+      passwordHash: userData.passwordHash || null,
       name: userData.name || null,
       email: userData.email || null,
       googleId: userData.googleId || null,
@@ -84,7 +84,7 @@ export class MemStorage implements IStorage {
     const updatedUser: User = {
       ...user,
       username: userData.username !== undefined ? userData.username : user.username,
-      password: userData.password !== undefined ? userData.password : user.password,
+      passwordHash: userData.passwordHash !== undefined ? userData.passwordHash : user.passwordHash,
       name: userData.name !== undefined ? userData.name : user.name,
       email: userData.email !== undefined ? userData.email : user.email,
       googleId: userData.googleId !== undefined ? userData.googleId : user.googleId,
