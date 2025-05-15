@@ -215,6 +215,21 @@ export class MemStorage implements IStorage {
   }
 
   // Categories operations
+  private async saveCategoriesToFile(): Promise<void> {
+    const fs = require('fs');
+    const path = require('path');
+    
+    const categoriesContent = `export let categories = ${JSON.stringify(categories, null, 2)};
+
+// Maximum categories a post can have
+export const MAX_CATEGORIES_PER_POST = 10;`;
+    
+    await fs.promises.writeFile(
+      path.join(process.cwd(), 'shared', 'schema.ts'), 
+      categoriesContent + '\n\n' + (await fs.promises.readFile(path.join(process.cwd(), 'shared', 'schema.ts'), 'utf8')).split('export let categories')[1]
+    );
+  }
+
   async getAllCategories(): Promise<string[]> {
     // Get all unique categories from posts
     const postCategories = Array.from(this.posts.values())
@@ -233,6 +248,8 @@ export class MemStorage implements IStorage {
       categories.push(category);
       // Sort categories alphabetically
       categories.sort();
+      // Save categories to file
+      await this.saveCategoriesToFile();
     }
 
     // Return all categories including the new one
@@ -245,6 +262,8 @@ export class MemStorage implements IStorage {
     if (index !== -1) {
       // Remove the category
       categories.splice(index, 1);
+      // Save changes to file
+      await this.saveCategoriesToFile();
       console.log(
         `Category "${category}" deleted. Updated categories:`,
         categories,
